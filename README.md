@@ -29,7 +29,7 @@ SignWave consists of two main parts:
 
 ## File Structure
 
-   ```bash
+```bash
 SignWave/
 ├── frontend/
 │   ├── public/
@@ -60,7 +60,7 @@ SignWave/
 │   └── cnn8grps_rad1_model.h5
 ├── .gitignore
 └── README.md
-   ```
+```
 
 ## Installation
 
@@ -78,58 +78,61 @@ Follow these steps to set up the SignWave project on your local machine:
 1. Open a terminal or command prompt.
 2. Clone the repository:
 
-   ```bash
+```bash
 git clone [https://github.com/Vaibhav0120/SignWave.git](https://github.com/Vaibhav0120/SignWave.git)
+```
+
+```bash
 cd SignWave
-   ```
+```
 
 
 ### Frontend Setup
 
 1. Navigate to the project's frontend directory:
 
-   ```bash
+```bash
 cd frontend
-   ```
+```
 
 2. Install the required Node.js packages:
 
-   ```bash
+```bash
 npm install
-   ```
+```
 
 ### Backend Setup
 
 1. Navigate to the project's backend directory:
 
-   ```bash
+```bash
 cd ../backend
-   ```
+```
 
 2. Create a Python virtual environment:
 
-   ```bash
+```bash
 python -m venv venv
-   ```
+```
 
 3. Activate the virtual environment:
 - On Windows:
 
-   ```bash
+```bash
 venv\Scripts\activate
-   ```
+```
 
 - On macOS and Linux:
 
-   ```bash
+```bash
 source venv/bin/activate
-   ```
+```
 
 4. Install the required Python packages:
 
-   ```bash
+```bash
 pip install flask flask-cors opencv-python numpy tensorflow cvzone
-   ```
+```
 
 ## Running the Application
 
@@ -140,9 +143,9 @@ To run the SignWave application, you need to start both the frontend and backend
 1. Ensure you're in the backend directory and the virtual environment is activated.
 2. Run the Flask application:
 
-   ```bash
+```bash
 python app.py
-   ```
+```
 
 The backend server should start running on `http://localhost:5000`.
 
@@ -152,9 +155,9 @@ The backend server should start running on `http://localhost:5000`.
 2. Navigate to the frontend directory.
 3. Start the React development server:
 
-   ```bash
+```bash
 npm start
-   ```
+```
 
 The frontend should open automatically in your default web browser at `http://localhost:3000`.
 
