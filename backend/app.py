@@ -62,4 +62,3 @@ def text_to_sign():
 
 if __name__ == '__main__':
     app.run(debug=True)
-

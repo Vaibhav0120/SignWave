@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface CameraProps {
   onCapture: (imageData: string) => void;
@@ -7,6 +7,7 @@ interface CameraProps {
 const Camera: React.FC<CameraProps> = ({ onCapture }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isStreamReady, setIsStreamReady] = useState(false);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -14,6 +15,7 @@ const Camera: React.FC<CameraProps> = ({ onCapture }) => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          setIsStreamReady(true);
         }
       } catch (err) {
         console.error('Error accessing camera:', err);
@@ -41,11 +43,12 @@ const Camera: React.FC<CameraProps> = ({ onCapture }) => {
 
   return (
     <div className="relative">
-      <video ref={videoRef} autoPlay className="w-full" />
+      <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
       <canvas ref={canvasRef} width="400" height="300" className="hidden" />
       <button
         onClick={captureImage}
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        disabled={!isStreamReady}
+        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       >
         Capture
       </button>
@@ -54,3 +57,4 @@ const Camera: React.FC<CameraProps> = ({ onCapture }) => {
 };
 
 export default Camera;
+
