@@ -100,6 +100,19 @@ cd frontend
 ```bash
 npm install
 ```
+npm install react-scripts@latest
+
+npm install nth-check@latest postcss@latest css-select@latest svgo@latest @svgr/webpack@latest resolve-url-loader@latest
+
+npm list react react-dom
+
+npm install react@latest react-dom@latest
+
+npm install @svgr/webpack@latest svgo@latest css-select@latest nth-check@latest
+
+npm install react@18 react-dom@18
+
+npm install
 
 ### Backend Setup
 
