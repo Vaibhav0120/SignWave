@@ -1,36 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TextToSpeech from "../components/TextToSpeech";
+import { debounce } from 'lodash';
 
-const SignToText: React.FC = () => {
+interface SignToTextProps {
+  isBackendConnected: boolean;
+}
+
+const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [result, setResult] = useState<string>("");
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
-  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const checkBackendConnection = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/health-check");
-        if (response.ok) {
-          setIsBackendConnected(true);
-          setError(null);
-        } else {
-          throw new Error("Backend health check failed");
-        }
-      } catch (error) {
-        setIsBackendConnected(false);
-        setError("Unable to connect to the backend. Please ensure the server is running.");
-      }
-    };
-
-    checkBackendConnection();
-    const intervalId = setInterval(checkBackendConnection, 30000); // Check every 30 seconds
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -48,36 +30,14 @@ const SignToText: React.FC = () => {
     };
 
     startCamera();
+
+    return () => {
+      const stream = videoRef.current?.srcObject as MediaStream;
+      stream?.getTracks().forEach(track => track.stop());
+    };
   }, []);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTranslating && isBackendConnected) {
-      interval = setInterval(captureFrame, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTranslating, isBackendConnected]);
-
-  const captureFrame = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      if (context) {
-        context.drawImage(
-          videoRef.current,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        const imageData = canvasRef.current.toDataURL("image/jpeg");
-        sendImageToBackend(imageData);
-      }
-    }
-  };
-
-  const sendImageToBackend = async (imageData: string) => {
+  const sendImageToBackend = useCallback(debounce(async (imageData: string) => {
     try {
       const response = await fetch("http://localhost:5000/api/predict", {
         method: "POST",
@@ -95,9 +55,35 @@ const SignToText: React.FC = () => {
     } catch (error) {
       console.error("Error sending image to backend:", error);
       setError("Failed to get prediction from the backend.");
-      setIsBackendConnected(false);
     }
-  };
+  }, 1000), []);
+
+  const captureFrame = useCallback(() => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext("2d");
+      if (context) {
+        context.drawImage(
+          videoRef.current,
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
+        const imageData = canvasRef.current.toDataURL("image/jpeg");
+        sendImageToBackend(imageData);
+      }
+    }
+  }, [sendImageToBackend]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTranslating && isBackendConnected) {
+      interval = setInterval(captureFrame, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTranslating, isBackendConnected, captureFrame]);
 
   const toggleTranslation = () => {
     if (!isBackendConnected) {
@@ -113,7 +99,7 @@ const SignToText: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8 text-white">Sign to Text</h1>
+      <h1 className="text-4xl font-bold mb-8 text-white text-center">Sign to Text</h1>
       {error && (
         <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
           {error}
@@ -132,8 +118,9 @@ const SignToText: React.FC = () => {
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
             <Button 
               onClick={toggleTranslation} 
-              variant="default"
+              variant={isTranslating ? "destructive" : "default"}
               disabled={!isBackendConnected}
+              className="shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
               {isTranslating ? "Stop Translating" : "Start Translating"}
             </Button>
@@ -141,11 +128,11 @@ const SignToText: React.FC = () => {
         </div>
         <div>
           <h2 className="text-2xl font-semibold mb-4 text-white">Translated Text:</h2>
-          <div className="bg-gray-800 p-4 rounded-lg min-h-[200px] mb-4">
+          <div className="bg-gray-800 p-4 rounded-lg min-h-[200px] mb-4 shadow-inner">
             <p className="text-xl text-white">{result}</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={clearResult} variant="outline">
+            <Button onClick={clearResult} variant="outline" className="shadow-lg hover:shadow-xl transition-shadow duration-300">
               Clear
             </Button>
             <TextToSpeech text={result} />
@@ -157,4 +144,3 @@ const SignToText: React.FC = () => {
 };
 
 export default SignToText;
-

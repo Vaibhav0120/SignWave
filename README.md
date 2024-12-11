@@ -109,6 +109,9 @@ npm install @radix-ui/react-slot class-variance-authority tailwindcss-animate
 npm install clsx tailwind-merge
 ```
 
+npm install lodash @types/lodash
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+
 ### Backend Setup
 
 1. Navigate to the project's backend directory:

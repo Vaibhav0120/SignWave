@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
+import { Button } from "../components/ui/button";
 import SignAnimation from '../components/SignAnimation';
 import { convertTextToSign } from '../utils/api';
 
-const TextToSign: React.FC = () => {
+interface TextToSignProps {
+  isBackendConnected: boolean;
+}
+
+const TextToSign: React.FC<TextToSignProps> = ({ isBackendConnected }) => {
   const [text, setText] = useState<string>('');
   const [animationUrl, setAnimationUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -10,6 +15,10 @@ const TextToSign: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isBackendConnected) {
+      setError("Cannot convert text. Backend is not connected.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -25,10 +34,10 @@ const TextToSign: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">Text to Sign</h1>
+      <h1 className="text-4xl font-bold mb-8 text-white text-center">Text to Sign</h1>
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="mb-4">
-          <label htmlFor="text" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="text" className="block text-sm font-medium text-gray-300 mb-2">
             Enter text to convert to sign language:
           </label>
           <input
@@ -36,20 +45,20 @@ const TextToSign: React.FC = () => {
             id="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full px-3 py-2 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
-        <button
+        <Button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-          disabled={isLoading}
+          disabled={isLoading || !isBackendConnected}
+          className="w-full"
         >
           {isLoading ? 'Converting...' : 'Convert to Sign'}
-        </button>
+        </Button>
       </form>
-      {isLoading && <p className="text-gray-600 text-center">Generating sign language animation...</p>}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      {isLoading && <p className="text-gray-300 text-center mb-4">Generating sign language animation...</p>}
       {animationUrl && !isLoading && !error && <SignAnimation animationUrl={animationUrl} />}
     </div>
   );
