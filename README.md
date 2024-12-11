@@ -41,6 +41,7 @@ SignWave/
 │   │   ├── components/
 │   │   │   ├── Navbar.tsx
 │   │   │   ├── Camera.tsx
+|   |   |   ├── CursorGradient.tsx
 │   │   │   ├── TextToSpeech.tsx
 │   │   │   └── SignAnimation.tsx
 │   │   ├── pages/
@@ -109,8 +110,13 @@ npm install @radix-ui/react-slot class-variance-authority tailwindcss-animate
 npm install clsx tailwind-merge
 ```
 
+```bash
 npm install lodash @types/lodash
+```
+
+```bash
 npm install --save-dev @testing-library/react @testing-library/jest-dom
+```
 
 ### Backend Setup
 
