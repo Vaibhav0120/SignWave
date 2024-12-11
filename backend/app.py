@@ -6,9 +6,13 @@ from keras.models import load_model
 import base64
 import traceback
 from cvzone.HandTrackingModule import HandDetector
+import logging
 
 app = Flask(__name__)
 CORS(app)
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Load the pre-trained model
 model = load_model('cnn8grps_rad1_model.h5')
@@ -29,14 +33,15 @@ def preprocess_image(image):
     # Resize the image to match the input size of the model
     resized = cv2.resize(thresh, (400, 400))
     
-    return resized
+    # Convert to RGB (3 channels)
+    rgb = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+    
+    return rgb
 
 def detect_hand(image):
-    hands = hd.findHands(image, draw=False, flipType=True)
+    hands, _ = hd.findHands(image, draw=False, flipType=True)
     if hands:
-        hand = hands[0]
-        bbox = hand['bbox']
-        return bbox
+        return hands[0]['bbox']
     return None
 
 @app.route('/api/health-check', methods=['GET'])
@@ -46,14 +51,18 @@ def health_check():
 @app.route('/api/predict', methods=['POST'])
 def predict():
     try:
+        app.logger.info("Received prediction request")
         data = request.json
         image_data = data['image'].split(',')[1]
         image = cv2.imdecode(np.frombuffer(base64.b64decode(image_data), np.uint8), cv2.IMREAD_COLOR)
+        
+        app.logger.info(f"Received image shape: {image.shape}")
         
         # Detect hand
         hand_bbox = detect_hand(image)
         
         if hand_bbox:
+            app.logger.info(f"Hand detected at: {hand_bbox}")
             x, y, w, h = hand_bbox
             
             # Extract hand region
@@ -63,7 +72,7 @@ def predict():
             processed_img = preprocess_image(hand_img)
             
             # Reshape for model input
-            model_input = np.reshape(processed_img, (1, 400, 400, 1))
+            model_input = np.expand_dims(processed_img, axis=0)
             
             # Make prediction
             prediction = model.predict(model_input)
@@ -71,6 +80,8 @@ def predict():
             
             # Convert class to character
             result = chr(predicted_class + 65)
+            
+            app.logger.info(f"Prediction: {result}")
             
             # Create a copy of the image for drawing
             output_image = image.copy()
@@ -89,20 +100,12 @@ def predict():
                 'image': f"data:image/jpeg;base64,{output_image_base64}"
             })
         
+        app.logger.warning("No hand detected in the image")
         return jsonify({'error': 'No hand detected'}), 400
     except Exception as e:
-        print(f"Error in predict: {str(e)}")
-        print(traceback.format_exc())
+        app.logger.error(f"Error in predict: {str(e)}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/text-to-sign', methods=['POST'])
-def text_to_sign():
-    data = request.json
-    text = data['text']
-    
-    # TODO: Implement text to sign language conversion
-    # For now, we'll return a placeholder response
-    return jsonify({'animationUrl': 'https://example.com/placeholder-animation.mp4'})
 
 if __name__ == '__main__':
     app.run(debug=True)

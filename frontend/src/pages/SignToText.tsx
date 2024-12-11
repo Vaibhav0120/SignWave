@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TextToSpeech from "../components/TextToSpeech";
-import { debounce } from 'lodash';
 
 interface SignToTextProps {
   isBackendConnected: boolean;
@@ -60,12 +59,13 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
     };
   }, []);
 
-  const sendImageToBackend = useCallback(debounce(async (imageData: string) => {
+  const sendImageToBackend = useCallback(async (imageData: string) => {
     if (!isBackendConnected) {
       setError("Cannot send image. Backend is not connected.");
       return;
     }
     try {
+      console.log("Sending image to backend");
       const response = await fetch("http://localhost:5000/api/predict", {
         method: "POST",
         headers: {
@@ -74,18 +74,27 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
         body: JSON.stringify({ image: imageData }),
       });
       if (!response.ok) {
+        if (response.status === 400) {
+          console.log("No hand detected");
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setResult((prevResult) => prevResult + data.prediction);
-      setConfidence(data.confidence);
-      setProcessedImage(data.image);
-      setError(null);
+      console.log("Received response from backend:", data);
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setResult((prevResult) => prevResult + data.prediction);
+        setConfidence(data.confidence);
+        setProcessedImage(data.image);
+        setError(null);
+      }
     } catch (error) {
       console.error("Error sending image to backend:", error);
       setError("Failed to get prediction from the backend.");
     }
-  }, 1000), [isBackendConnected]);
+  }, [isBackendConnected]);
 
   const captureFrame = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
@@ -187,3 +196,4 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 };
 
 export default SignToText;
+
