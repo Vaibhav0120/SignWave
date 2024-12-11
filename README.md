@@ -100,6 +100,14 @@ cd frontend
 ```bash
 npm install
 ```
+```bash
+
+npm install @radix-ui/react-slot class-variance-authority tailwindcss-animate
+```
+
+```bash
+npm install clsx tailwind-merge
+```
 
 ### Backend Setup
 
@@ -131,7 +139,17 @@ source venv/bin/activate
 4. Install the required Python packages:
 
 ```bash
-pip install flask flask-cors opencv-python numpy tensorflow cvzone
+pip install flask flask-cors opencv-python numpy tensorflow cvzone mediapipe
+```
+
+```bash
+pip freeze > requirements.txt
+```
+
+For Everyone v
+
+```bash
+pip install -r requirements.txt
 ```
 
 ## Running the Application
