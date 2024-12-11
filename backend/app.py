@@ -5,6 +5,7 @@ import numpy as np
 from keras.models import load_model
 import base64
 import traceback
+from cvzone.HandTrackingModule import HandDetector
 
 app = Flask(__name__)
 CORS(app)
@@ -12,25 +13,30 @@ CORS(app)
 # Load the pre-trained model
 model = load_model('cnn8grps_rad1_model.h5')
 
-def detect_hand(image):
+# Initialize HandDetector
+hd = HandDetector(maxHands=1)
+
+def preprocess_image(image):
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # Apply Gaussian blur
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    blur = cv2.GaussianBlur(gray, (5, 5), 2)
     
-    # Apply threshold
-    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # Apply adaptive thresholding
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
     
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Resize the image to match the input size of the model
+    resized = cv2.resize(thresh, (400, 400))
     
-    if contours:
-        # Assume the largest contour is the hand
-        hand_contour = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(hand_contour)
-        return x, y, w, h
-    
+    return resized
+
+def detect_hand(image):
+    hands = hd.findHands(image, draw=False, flipType=True)
+    if hands:
+        hand = hands[0]
+        bbox = hand['bbox']
+        return bbox
     return None
 
 @app.route('/api/health-check', methods=['GET'])
@@ -54,25 +60,36 @@ def predict():
             hand_img = image[y:y+h, x:x+w]
             
             # Preprocess the image
-            gray = cv2.cvtColor(hand_img, cv2.COLOR_BGR2GRAY)
-            blur = cv2.GaussianBlur(gray, (5, 5), 2)
-            th3 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-            ret, test_image = cv2.threshold(th3, 27, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            processed_img = preprocess_image(hand_img)
             
-            # Resize and reshape for model input
-            test_image = cv2.resize(test_image, (400, 400))
-            test_image = np.reshape(test_image, (1, 400, 400, 1))
+            # Reshape for model input
+            model_input = np.reshape(processed_img, (1, 400, 400, 1))
             
             # Make prediction
-            prediction = model.predict(test_image)
+            prediction = model.predict(model_input)
             predicted_class = np.argmax(prediction)
             
             # Convert class to character
             result = chr(predicted_class + 65)
             
-            return jsonify({'prediction': result})
+            # Create a copy of the image for drawing
+            output_image = image.copy()
+            
+            # Draw bounding box and predicted character
+            cv2.rectangle(output_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.putText(output_image, result, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            
+            # Encode the output image
+            _, buffer = cv2.imencode('.jpg', output_image)
+            output_image_base64 = base64.b64encode(buffer).decode('utf-8')
+            
+            return jsonify({
+                'prediction': result,
+                'confidence': float(np.max(prediction)),
+                'image': f"data:image/jpeg;base64,{output_image_base64}"
+            })
         
-        return jsonify({'prediction': 'No hand detected'})
+        return jsonify({'error': 'No hand detected'}), 400
     except Exception as e:
         print(f"Error in predict: {str(e)}")
         print(traceback.format_exc())
