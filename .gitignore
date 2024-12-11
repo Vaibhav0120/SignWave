@@ -1,5 +1,5 @@
 # Dependencies
-node_modules/
+frontend/node_modules/
 /.pnp
 .pnp.js
 
@@ -34,4 +34,4 @@ env/
 .idea/
 
 # ML model
-*.h5
+# *.h5
