@@ -147,6 +147,7 @@ source venv/bin/activate
 
 4. Install the required Python packages:
 
+First Time Installing dependency (for DEVs)-
 ```bash
 pip install flask flask-cors opencv-python numpy tensorflow cvzone mediapipe
 ```
@@ -155,7 +156,7 @@ pip install flask flask-cors opencv-python numpy tensorflow cvzone mediapipe
 pip freeze > requirements.txt
 ```
 
-For Everyone v
+For Everyone Install Project First Time-
 
 ```bash
 pip install -r requirements.txt
