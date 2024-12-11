@@ -39,7 +39,7 @@ def preprocess_image(image):
     return rgb
 
 def detect_hand(image):
-    hands, _ = hd.findHands(image, draw=False, flipType=True)
+    hands, _ = hd.findHands(image, draw=False, flipType=False)
     if hands:
         return hands[0]['bbox']
     return None
@@ -83,21 +83,10 @@ def predict():
             
             app.logger.info(f"Prediction: {result}")
             
-            # Create a copy of the image for drawing
-            output_image = image.copy()
-            
-            # Draw bounding box and predicted character
-            cv2.rectangle(output_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            cv2.putText(output_image, result, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            
-            # Encode the output image
-            _, buffer = cv2.imencode('.jpg', output_image)
-            output_image_base64 = base64.b64encode(buffer).decode('utf-8')
-            
             return jsonify({
                 'prediction': result,
                 'confidence': float(np.max(prediction)),
-                'image': f"data:image/jpeg;base64,{output_image_base64}"
+                'bbox': hand_bbox
             })
         
         app.logger.warning("No hand detected in the image")
@@ -108,5 +97,5 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
 

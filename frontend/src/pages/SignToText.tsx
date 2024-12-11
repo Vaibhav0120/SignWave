@@ -10,8 +10,8 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [result, setResult] = useState<string>("");
+  const [currentPrediction, setCurrentPrediction] = useState<string>("");
   const [confidence, setConfidence] = useState<number>(0);
-  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(initialBackendState);
@@ -31,7 +31,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
     };
 
     checkBackendConnection();
-    const intervalId = setInterval(checkBackendConnection, 5000); // Check every 5 seconds
+    const intervalId = setInterval(checkBackendConnection, 5000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -65,7 +65,6 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       return;
     }
     try {
-      console.log("Sending image to backend");
       const response = await fetch("http://localhost:5000/api/predict", {
         method: "POST",
         headers: {
@@ -81,13 +80,12 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Received response from backend:", data);
       if (data.error) {
         setError(data.error);
       } else {
-        setResult((prevResult) => prevResult + data.prediction);
+        setCurrentPrediction(data.prediction);
         setConfidence(data.confidence);
-        setProcessedImage(data.image);
+        drawHandTracking(data.bbox, data.prediction);
         setError(null);
       }
     } catch (error) {
@@ -96,18 +94,36 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
     }
   }, [isBackendConnected]);
 
+  const drawHandTracking = useCallback((bbox: number[], prediction: string) => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (canvas && video) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Draw bounding box
+        ctx.strokeStyle = 'green';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bbox[0], bbox[1], bbox[2], bbox[3]);
+        
+        // Draw prediction text
+        ctx.fillStyle = 'green';
+        ctx.font = '24px Arial';
+        ctx.fillText(prediction, bbox[0], bbox[1] - 10);
+      }
+    }
+  }, []);
+
   const captureFrame = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext('2d');
       if (context) {
-        context.drawImage(
-          videoRef.current,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        const imageData = canvasRef.current.toDataURL("image/jpeg");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL("image/jpeg");
         sendImageToBackend(imageData);
       }
     }
@@ -116,12 +132,18 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isTranslating && isBackendConnected) {
-      interval = setInterval(captureFrame, 1000);
+      interval = setInterval(captureFrame, 500); // Capture every 500ms
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isTranslating, isBackendConnected, captureFrame]);
+
+  useEffect(() => {
+    if (currentPrediction && currentPrediction !== result[result.length - 1]) {
+      setResult(prev => prev + currentPrediction);
+    }
+  }, [currentPrediction, result]);
 
   const toggleTranslation = () => {
     if (!isBackendConnected) {
@@ -133,6 +155,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 
   const clearResult = () => {
     setResult("");
+    setCurrentPrediction("");
   };
 
   return (
@@ -145,23 +168,18 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="relative h-[70vh]">
-          {processedImage ? (
-            <img
-              src={processedImage}
-              alt="Processed hand sign"
-              className="w-full h-auto mb-4 rounded-lg"
-              style={{ maxHeight: "70vh" }}
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-auto mb-4 rounded-lg"
-              style={{ maxHeight: "70vh", transform: "scaleX(-1)" }}
-            />
-          )}
-          <canvas ref={canvasRef} className="hidden" width="640" height="480" />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className="hidden"
+          />
+          <canvas 
+            ref={canvasRef}
+            className="w-full h-full object-cover mb-4 rounded-lg"
+            width={640}
+            height={480}
+          />
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
             <Button 
               onClick={toggleTranslation} 
@@ -186,7 +204,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
               <TextToSpeech text={result} />
             </div>
             <div className="text-white">
-              Confidence: {(confidence * 100).toFixed(2)}%
+              Current: {currentPrediction} ({(confidence * 100).toFixed(2)}%)
             </div>
           </div>
         </div>
