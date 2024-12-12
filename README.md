@@ -111,6 +111,11 @@ npm install clsx tailwind-merge
 ```
 
 ```bash
+npm install lucide-react
+```
+
+
+```bash
 npm install lodash @types/lodash
 ```
 

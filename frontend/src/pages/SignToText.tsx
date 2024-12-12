@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TextToSpeech from "../components/TextToSpeech";
+import CameraOffSign from "../components/CameraOffSign";
 
 interface SignToTextProps {
   isBackendConnected: boolean;
@@ -15,6 +16,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(initialBackendState);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
 
   useEffect(() => {
     const checkBackendConnection = async () => {
@@ -38,16 +40,21 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 
   useEffect(() => {
     const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+      if (isCameraActive) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          setError("Unable to access the camera. Please ensure you have given permission.");
         }
-      } catch (err) {
-        console.error("Error accessing camera:", err);
-        setError("Unable to access the camera. Please ensure you have given permission.");
+      } else {
+        const stream = videoRef.current?.srcObject as MediaStream;
+        stream?.getTracks().forEach(track => track.stop());
       }
     };
 
@@ -57,7 +64,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       const stream = videoRef.current?.srcObject as MediaStream;
       stream?.getTracks().forEach(track => track.stop());
     };
-  }, []);
+  }, [isCameraActive]);
 
   const sendImageToBackend = useCallback(async (imageData: string) => {
     if (!isBackendConnected) {
@@ -131,13 +138,13 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isTranslating && isBackendConnected) {
+    if (isTranslating && isBackendConnected && isCameraActive) {
       interval = setInterval(captureFrame, 500); // Capture every 500ms
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTranslating, isBackendConnected, captureFrame]);
+  }, [isTranslating, isBackendConnected, isCameraActive, captureFrame]);
 
   useEffect(() => {
     if (currentPrediction && currentPrediction !== result[result.length - 1]) {
@@ -151,6 +158,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       return;
     }
     setIsTranslating(!isTranslating);
+    setIsCameraActive(!isTranslating);
   };
 
   const clearResult = () => {
@@ -168,18 +176,24 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="relative h-[70vh]">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className="hidden"
-          />
-          <canvas 
-            ref={canvasRef}
-            className="w-full h-full object-cover mb-4 rounded-lg"
-            width={640}
-            height={480}
-          />
+          {isCameraActive ? (
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="hidden"
+              />
+              <canvas 
+                ref={canvasRef}
+                className="w-full h-full object-cover mb-4 rounded-lg"
+                width={640}
+                height={480}
+              />
+            </>
+          ) : (
+            <CameraOffSign />
+          )}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
             <Button 
               onClick={toggleTranslation} 
