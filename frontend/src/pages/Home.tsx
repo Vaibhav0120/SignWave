@@ -39,7 +39,7 @@ const Home: React.FC = () => {
       </div>
 
       <div className="text-center">
-        <img src="/signwave-demo.jpg" alt="SignWave Demo" className="mx-auto rounded-lg shadow-lg mb-8" style={{maxWidth: '100%', height: 'auto'}} />
+        <img src="/images/Sign_Language.png" alt="A to Z Sign Language" className="mx-auto rounded-lg shadow-lg mb-8" style={{maxWidth: '60%', height: 'auto'}} />
         <p className="text-gray-300">Experience the power of SignWave in action!</p>
       </div>
     </div>
