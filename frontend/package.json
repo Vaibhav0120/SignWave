@@ -22,6 +22,7 @@
     "react-router-dom": "^6.10.0",
     "react-scripts": "^5.0.1",
     "resolve-url-loader": "^5.0.0",
+    "styled-components": "^6.1.13",
     "svgo": "^3.3.2",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

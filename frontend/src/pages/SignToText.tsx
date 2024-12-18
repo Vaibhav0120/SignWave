@@ -5,9 +5,10 @@ import CameraOffSign from "../components/CameraOffSign";
 
 interface SignToTextProps {
   isBackendConnected: boolean;
+  isDarkMode: boolean;
 }
 
-const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBackendState }) => {
+const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBackendState, isDarkMode }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [result, setResult] = useState<string>("");
@@ -61,10 +62,33 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
     startCamera();
 
     return () => {
-      const stream = videoRef.current?.srcObject as MediaStream;
+      const currentVideo = videoRef.current;
+      const stream = currentVideo?.srcObject as MediaStream;
       stream?.getTracks().forEach(track => track.stop());
     };
   }, [isCameraActive]);
+
+  const drawHandTracking = useCallback((bbox: number[], prediction: string) => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (canvas && video) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Draw bounding box
+        ctx.strokeStyle = 'green';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bbox[0], bbox[1], bbox[2], bbox[3]);
+        
+        // Draw prediction text
+        ctx.fillStyle = 'green';
+        ctx.font = '24px Arial';
+        ctx.fillText(prediction, bbox[0], bbox[1] - 10);
+      }
+    }
+  }, []);
 
   const sendImageToBackend = useCallback(async (imageData: string) => {
     if (!isBackendConnected) {
@@ -99,29 +123,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       console.error("Error sending image to backend:", error);
       setError("Failed to get prediction from the backend.");
     }
-  }, [isBackendConnected]);
-
-  const drawHandTracking = useCallback((bbox: number[], prediction: string) => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (canvas && video) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Draw bounding box
-        ctx.strokeStyle = 'green';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bbox[0], bbox[1], bbox[2], bbox[3]);
-        
-        // Draw prediction text
-        ctx.fillStyle = 'green';
-        ctx.font = '24px Arial';
-        ctx.fillText(prediction, bbox[0], bbox[1] - 10);
-      }
-    }
-  }, []);
+  }, [isBackendConnected, drawHandTracking]);
 
   const captureFrame = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
@@ -168,7 +170,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8 text-white text-center">Sign to Text</h1>
+      <h1 className={`text-4xl font-bold mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'} text-center`}>Sign to Text</h1>
       {error && (
         <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
           {error}
@@ -206,9 +208,9 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
           </div>
         </div>
         <div className="h-[70vh] flex flex-col">
-          <h2 className="text-2xl font-semibold mb-4 text-white">Translated Text:</h2>
-          <div className="bg-gray-800 p-4 rounded-lg flex-grow mb-4 shadow-inner overflow-auto">
-            <p className="text-xl text-white">{result}</p>
+          <h2 className={`text-2xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Translated Text:</h2>
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg flex-grow mb-4 shadow-inner overflow-auto`}>
+            <p className={`text-xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{result}</p>
           </div>
           <div className="flex justify-between items-center mb-4">
             <div className="flex gap-2">
@@ -217,7 +219,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
               </Button>
               <TextToSpeech text={result} />
             </div>
-            <div className="text-white">
+            <div className={isDarkMode ? 'text-white' : 'text-gray-900'}>
               Current: {currentPrediction} ({(confidence * 100).toFixed(2)}%)
             </div>
           </div>

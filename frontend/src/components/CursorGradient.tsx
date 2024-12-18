@@ -1,13 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 
-const CursorGradient: React.FC = () => {
+interface CursorGradientProps {
+  isDarkMode: boolean;
+}
+
+const CursorGradient: React.FC<CursorGradientProps> = ({ isDarkMode }) => {
   const gradientRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       if (gradientRef.current) {
         const { clientX, clientY } = event;
-        gradientRef.current.style.background = `radial-gradient(circle 100px at ${clientX}px ${clientY}px, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0) 70%)`;
+        gradientRef.current.style.background = `radial-gradient(circle 100px at ${clientX}px ${clientY}px, ${isDarkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.1)'} 0%, ${isDarkMode ? 'rgba(59, 130, 246, 0)' : 'rgba(59, 130, 246, 0)'} 70%)`;
       }
     };
 
@@ -16,7 +20,7 @@ const CursorGradient: React.FC = () => {
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []);
+  }, [isDarkMode]);
 
   return (
     <div
@@ -28,3 +32,4 @@ const CursorGradient: React.FC = () => {
 };
 
 export default CursorGradient;
+

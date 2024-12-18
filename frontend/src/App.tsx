@@ -8,6 +8,7 @@ import CursorGradient from "./components/CursorGradient";
 
 const App: React.FC = () => {
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
 
   useEffect(() => {
     const checkBackendConnection = async () => {
@@ -25,24 +26,28 @@ const App: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   return (
     <Router>
-      <div className="App min-h-screen bg-gray-900 text-white flex flex-col">
-        <Navbar />
+      <div className={`App min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} flex flex-col`}>
+        <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
         <main className="flex-grow container mx-auto px-4 py-8">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home isDarkMode={isDarkMode} />} />
             <Route
               path="/sign-to-text"
-              element={<SignToText isBackendConnected={isBackendConnected} />}
+              element={<SignToText isBackendConnected={isBackendConnected} isDarkMode={isDarkMode} />}
             />
             <Route
               path="/text-to-sign"
-              element={<TextToSign isBackendConnected={isBackendConnected} />}
+              element={<TextToSign isBackendConnected={isBackendConnected} isDarkMode={isDarkMode} />}
             />
           </Routes>
         </main>
-        <CursorGradient />
+        <CursorGradient isDarkMode={isDarkMode} />
       </div>
     </Router>
   );
