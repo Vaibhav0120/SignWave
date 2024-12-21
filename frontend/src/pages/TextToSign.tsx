@@ -91,9 +91,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
             onChange={(e) => setText(e.target.value)}
             className={`w-full h-[calc(100%-4rem)] px-4 py-3 ${
               isDarkMode
-                ? "bg-gray-700 text-white"
-                : "bg-gray-100 text-gray-900"
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out`}
+                ? "bg-gray-700 text-white border-gray-600"
+                : "bg-white text-gray-900 border-gray-300"
+            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out border-2`}
             required
             placeholder="Type your text here..."
           />
@@ -104,7 +104,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
               onClick={handleClear}
               variant="outline"
               size="sm"
-              className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+              }`}
             >
               Clear
             </Button>
@@ -112,7 +114,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
               type="submit"
               disabled={isTranslating}
               size="sm"
-              className="bg-green-500 text-white shadow-lg hover:shadow-xl transition-shadow duration-300"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'
+              } text-white`}
             >
               {isTranslating ? "Translating..." : "Translate"}
             </Button>
@@ -140,8 +144,10 @@ const TextToSign: React.FC<TextToSignProps> = ({
       </h2>
       <div
         className={`${
-          isDarkMode ? "bg-gray-800" : "bg-gray-100"
-        } p-4 rounded-lg flex-grow shadow-inner overflow-hidden flex items-center justify-center`}
+          isDarkMode ? "bg-gray-800" : "bg-white"
+        } p-4 rounded-lg flex-grow shadow-inner overflow-hidden flex items-center justify-center border-2 ${
+          isDarkMode ? "border-gray-700" : "border-gray-300"
+        }`}
       >
         {isTranslating && translatedImages.length > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -188,4 +194,3 @@ const TextToSign: React.FC<TextToSignProps> = ({
 };
 
 export default TextToSign;
-

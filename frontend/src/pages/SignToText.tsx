@@ -149,7 +149,7 @@ const SignToText: React.FC<SignToTextProps> = ({
             <video ref={videoRef} autoPlay playsInline className="hidden" />
             <canvas
               ref={canvasRef}
-              className="w-full h-full object-cover rounded-lg"
+              className="w-full h-full object-cover rounded-lg border-2 border-gray-300"
               width={640}
               height={480}
             />
@@ -164,7 +164,9 @@ const SignToText: React.FC<SignToTextProps> = ({
           variant={isTranslating ? "destructive" : "default"}
           disabled={!isBackendConnected}
           size="sm"
-          className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+          className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+            isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+          } text-white`}
         >
           {isTranslating ? "Stop Translating" : "Start Translating"}
         </Button>
@@ -183,8 +185,10 @@ const SignToText: React.FC<SignToTextProps> = ({
       </h2>
       <div
         className={`${
-          isDarkMode ? "bg-gray-800" : "bg-gray-100"
-        } p-4 rounded-lg flex-grow mb-2 shadow-inner overflow-auto`}
+          isDarkMode ? "bg-gray-800" : "bg-white"
+        } p-4 rounded-lg flex-grow mb-2 shadow-inner overflow-auto border-2 ${
+          isDarkMode ? "border-gray-700" : "border-gray-300"
+        }`}
       >
         {isTranslating ? (
           <div className="flex items-center justify-center h-full">
@@ -204,11 +208,13 @@ const SignToText: React.FC<SignToTextProps> = ({
             onClick={clearResult}
             variant="outline"
             size="sm"
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+            className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+              isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+            }`}
           >
             Clear
           </Button>
-          <TextToSpeech text={result} />
+          <TextToSpeech text={result} isDarkMode={isDarkMode} />
         </div>
         <div
           className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}
@@ -245,5 +251,5 @@ const SignToText: React.FC<SignToTextProps> = ({
     </>
   );
 };
-export default SignToText;
 
+export default SignToText;

@@ -6,9 +6,10 @@ import { Volume2 } from 'lucide-react';
 
 interface TextToSpeechProps {
   text: string;
+  isDarkMode: boolean;
 }
 
-const TextToSpeech: React.FC<TextToSpeechProps> = ({ text }) => {
+const TextToSpeech: React.FC<TextToSpeechProps> = ({ text, isDarkMode }) => {
   const speak = () => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -21,9 +22,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text }) => {
   return (
     <Button
       onClick={speak}
-      variant="outline"
       size="sm"
-      className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+      className={`bg-green-500 text-white shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+        isDarkMode ? 'hover:bg-green-600' : 'hover:bg-green-400'
+      }`}
     >
       <Volume2 className="w-4 h-4 mr-2" />
       Speak
@@ -32,4 +34,3 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ text }) => {
 };
 
 export default TextToSpeech;
-
