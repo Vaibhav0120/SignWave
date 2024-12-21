@@ -1,31 +1,33 @@
-import React, { useState } from 'react';
+"use client"
+
+import React from 'react';
+import { Button } from './ui/button';
+import { Volume2 } from 'lucide-react';
 
 interface TextToSpeechProps {
   text: string;
 }
 
 const TextToSpeech: React.FC<TextToSpeechProps> = ({ text }) => {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
   const speak = () => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
     } else {
-      alert('Text-to-speech is not supported in your browser.');
+      console.error('Text-to-speech not supported in this browser.');
     }
   };
 
   return (
-    <button
+    <Button
       onClick={speak}
-      disabled={isSpeaking}
-      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+      variant="outline"
+      size="sm"
+      className="shadow-lg hover:shadow-xl transition-shadow duration-300"
     >
-      {isSpeaking ? 'Speaking...' : 'Speak'}
-    </button>
+      <Volume2 className="w-4 h-4 mr-2" />
+      Speak
+    </Button>
   );
 };
 

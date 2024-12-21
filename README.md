@@ -119,7 +119,7 @@ npm install clsx tailwind-merge
 ```
 
 ```bash
-npm install lucide-react
+npm install framer-motion lucide-react
 ```
 
 

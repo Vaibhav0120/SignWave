@@ -7,7 +7,6 @@ const CameraOffSign: React.FC = () => {
       <div className="text-white text-center">
         <Camera className="w-16 h-16 mx-auto mb-4" />
         <p className="text-xl">Camera is off</p>
-        <p className="text-sm">Click "Start Translating" to begin</p>
       </div>
     </div>
   );
