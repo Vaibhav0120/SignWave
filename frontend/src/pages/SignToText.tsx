@@ -15,7 +15,7 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
   const [currentPrediction, setCurrentPrediction] = useState<string>("");
   const [confidence, setConfidence] = useState<number>(0);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(initialBackendState);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
 
@@ -25,11 +25,14 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
         const response = await fetch("http://localhost:5000/api/health-check");
         setIsBackendConnected(response.ok);
         if (!response.ok) {
-          throw new Error("Backend is not responding");
+          throw new Error(`Backend health check failed with status: ${response.status}`);
         }
       } catch (error) {
         setIsBackendConnected(false);
-        setError("Cannot connect to backend. Please ensure the backend server is running.");
+        setError({
+          message: "Cannot connect to backend.",
+          details: `Error: ${error instanceof Error ? error.message : String(error)}. Please ensure the backend server is running.`
+        });
       }
     };
 
@@ -51,7 +54,10 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
           }
         } catch (err) {
           console.error("Error accessing camera:", err);
-          setError("Unable to access the camera. Please ensure you have given permission.");
+          setError({
+            message: "Unable to access the camera.",
+            details: `Error: ${err instanceof Error ? err.message : String(err)}. Please ensure you have given permission.`
+          });
         }
       } else {
         const stream = videoRef.current?.srcObject as MediaStream;
@@ -68,34 +74,56 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
     };
   }, [isCameraActive]);
 
-  const drawHandTracking = useCallback((bbox: number[], prediction: string) => {
-    const canvas = canvasRef.current;
+  const mirrorAndDrawHandTracking = useCallback((bbox?: number[], prediction?: string) => {
+    console.log('mirrorAndDrawHandTracking called with:', { bbox, prediction });
     const video = videoRef.current;
-    if (canvas && video) {
+    const canvas = canvasRef.current;
+    if (video && canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Draw bounding box
-        ctx.strokeStyle = 'green';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bbox[0], bbox[1], bbox[2], bbox[3]);
-        
-        // Draw prediction text
-        ctx.fillStyle = 'green';
-        ctx.font = '24px Arial';
-        ctx.fillText(prediction, bbox[0], bbox[1] - 10);
+        // Mirror and draw the video
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        // Draw hand tracking if bbox and prediction are provided
+        if (bbox && prediction) {
+          const [x, y, w, h] = bbox;
+          const mirroredX = canvas.width - (x + w);
+
+          // Draw bounding box
+          ctx.strokeStyle = 'green';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(mirroredX, y, w, h);
+
+          // Draw prediction text
+          ctx.fillStyle = 'green';
+          ctx.font = '24px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText(prediction, mirroredX, y - 10);
+        }
       }
     }
   }, []);
 
-  const sendImageToBackend = useCallback(async (imageData: string) => {
+  const sendImageToBackend = useCallback(async () => {
+    console.log('sendImageToBackend called');
     if (!isBackendConnected) {
-      setError("Cannot send image. Backend is not connected.");
+      setError({
+        message: "Cannot send image. Backend is not connected.",
+        details: "Please check your backend server and network connection."
+      });
       return;
     }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
     try {
+      const imageData = canvas.toDataURL("image/jpeg");
       const response = await fetch("http://localhost:5000/api/predict", {
         method: "POST",
         headers: {
@@ -103,50 +131,64 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
         },
         body: JSON.stringify({ image: imageData }),
       });
+
       if (!response.ok) {
         if (response.status === 400) {
           console.log("No hand detected");
+          mirrorAndDrawHandTracking(); // Clear previous tracking
+          setError({
+            message: "No hand detected in the image.",
+            details: "Please ensure your hand is clearly visible in the camera frame."
+          });
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       const data = await response.json();
+      console.log('Backend response:', data);
       if (data.error) {
-        setError(data.error);
+        setError({
+          message: "Backend prediction error",
+          details: data.error
+        });
       } else {
         setCurrentPrediction(data.prediction);
         setConfidence(data.confidence);
-        drawHandTracking(data.bbox, data.prediction);
+        mirrorAndDrawHandTracking(data.bbox, data.prediction);
         setError(null);
       }
     } catch (error) {
       console.error("Error sending image to backend:", error);
-      setError("Failed to get prediction from the backend.");
+      setError({
+        message: "Failed to get prediction from the backend.",
+        details: `Error: ${error instanceof Error ? error.message : String(error)}`
+      });
     }
-  }, [isBackendConnected, drawHandTracking]);
-
-  const captureFrame = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = canvas.toDataURL("image/jpeg");
-        sendImageToBackend(imageData);
-      }
-    }
-  }, [sendImageToBackend]);
+  }, [isBackendConnected, mirrorAndDrawHandTracking]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTranslating && isBackendConnected && isCameraActive) {
-      interval = setInterval(captureFrame, 500); // Capture every 500ms
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    let animationFrameId: number;
+    let intervalId: NodeJS.Timeout;
+
+    const updateFrame = () => {
+      mirrorAndDrawHandTracking();
+      animationFrameId = requestAnimationFrame(updateFrame);
     };
-  }, [isTranslating, isBackendConnected, isCameraActive, captureFrame]);
+
+    if (isCameraActive) {
+      updateFrame();
+    }
+
+    if (isTranslating && isBackendConnected && isCameraActive) {
+      intervalId = setInterval(sendImageToBackend, 500); // Send image every 500ms
+    }
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isTranslating, isBackendConnected, isCameraActive, mirrorAndDrawHandTracking, sendImageToBackend]);
 
   useEffect(() => {
     if (currentPrediction && currentPrediction !== result[result.length - 1]) {
@@ -156,7 +198,10 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
 
   const toggleTranslation = () => {
     if (!isBackendConnected) {
-      setError("Cannot start translation. Backend is not connected.");
+      setError({
+        message: "Cannot start translation. Backend is not connected.",
+        details: "Please ensure the backend server is running and accessible."
+      });
       return;
     }
     setIsTranslating(!isTranslating);
@@ -173,7 +218,10 @@ const SignToText: React.FC<SignToTextProps> = ({ isBackendConnected: initialBack
       <h1 className={`text-4xl font-bold mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'} text-center`}>Sign to Text</h1>
       {error && (
         <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
-          {error}
+          <p className="font-bold">{error.message}</p>
+          {error.details && (
+            <p className="mt-2 text-sm">{error.details}</p>
+          )}
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
