@@ -36,14 +36,21 @@ SignWave/
 │   │   ├── index.html
 │   │   ├── favicon.ico
 │   │   ├── manifest.json
-│   │   └── robots.txt
+│   │   ├── robots.txt
+│   │   └── images/
+│   │       ├── Sign_Language.png
+│   │       └── alphabets/
+│   │           ├── A.png
+│   │           ├── B.png
+│   │           └── ... (other alphabet images)
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Navbar.tsx
 │   │   │   ├── Camera.tsx
-|   |   |   ├── CursorGradient.tsx
+│   │   │   ├── CursorGradient.tsx
 │   │   │   ├── TextToSpeech.tsx
-│   │   │   └── SignAnimation.tsx
+│   │   │   ├── SignAnimation.tsx
+│   │   │   └── ReverseButton.tsx
 │   │   ├── pages/
 │   │   │   ├── Home.tsx
 │   │   │   ├── SignToText.tsx
@@ -61,6 +68,7 @@ SignWave/
 │   └── cnn8grps_rad1_model.h5
 ├── .gitignore
 └── README.md
+
 ```
 
 ## Installation
