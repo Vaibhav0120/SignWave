@@ -10,6 +10,8 @@ const AppContent: React.FC = () => {
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<string>("/");
+  const [previousPage, setPreviousPage] = useState<string>("/");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,6 +31,11 @@ const AppContent: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    setPreviousPage(currentPage);
+    setCurrentPage(location.pathname);
+  }, [location.pathname]);
+
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -40,7 +47,19 @@ const AppContent: React.FC = () => {
     } else if (location.pathname === "/text-to-sign") {
       navigate("/sign-to-text");
     }
-    setTimeout(() => setIsTransitioning(false), 500); // Match this with the animation duration
+    setTimeout(() => setIsTransitioning(false), 500);
+  };
+
+  const getAnimationDirection = () => {
+    if (previousPage === "/" || currentPage === "/") {
+      return "none";
+    } else if (
+      (previousPage === "/sign-to-text" && currentPage === "/text-to-sign") ||
+      (previousPage === "/text-to-sign" && currentPage === "/sign-to-text")
+    ) {
+      return previousPage === "/sign-to-text" ? "clockwise" : "anticlockwise";
+    }
+    return "none";
   };
 
   return (
@@ -57,6 +76,7 @@ const AppContent: React.FC = () => {
                 isDarkMode={isDarkMode} 
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
+                animationDirection={getAnimationDirection()}
               />
             }
           />
@@ -67,6 +87,7 @@ const AppContent: React.FC = () => {
                 isDarkMode={isDarkMode} 
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
+                animationDirection={getAnimationDirection()}
               />
             }
           />
@@ -86,4 +107,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

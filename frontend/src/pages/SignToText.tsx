@@ -12,6 +12,7 @@ interface SignToTextProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
   isTransitioning: boolean;
+  animationDirection: "clockwise" | "anticlockwise" | "none";
 }
 
 const SignToText: React.FC<SignToTextProps> = ({
@@ -19,6 +20,7 @@ const SignToText: React.FC<SignToTextProps> = ({
   isDarkMode,
   onSwitchMode,
   isTransitioning,
+  animationDirection,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -235,14 +237,13 @@ const SignToText: React.FC<SignToTextProps> = ({
       <TranslationLayout
         isDarkMode={isDarkMode}
         onSwitchMode={onSwitchMode}
-        isClockwise={true}
         leftContent={leftContent}
         rightContent={rightContent}
         isTransitioning={isTransitioning}
+        animationDirection={animationDirection}
       />
     </>
   );
 };
-
 export default SignToText;
 

@@ -45,12 +45,18 @@ SignWave/
 │   │           └── ... (other alphabet images)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Navbar.tsx
 │   │   │   ├── Camera.tsx
+│   │   │   ├── CameraOffSign.tsx
 │   │   │   ├── CursorGradient.tsx
-│   │   │   ├── TextToSpeech.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── ReverseButton.tsx
 │   │   │   ├── SignAnimation.tsx
-│   │   │   └── ReverseButton.tsx
+│   │   │   ├── Switch.tsx
+│   │   │   ├── TextToSpeech.tsx
+│   │   │   ├── TranslationLayout.tsx
+│   │   │   └── ui/
+│   │   │       ├── button.tsx
+│   │   │       └── spinner.tsx
 │   │   ├── pages/
 │   │   │   ├── Home.tsx
 │   │   │   ├── SignToText.tsx

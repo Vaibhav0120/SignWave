@@ -8,12 +8,14 @@ interface TextToSignProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
   isTransitioning: boolean;
+  animationDirection: "clockwise" | "anticlockwise" | "none";
 }
 
 const TextToSign: React.FC<TextToSignProps> = ({
   isDarkMode,
   onSwitchMode,
   isTransitioning,
+  animationDirection,
 }) => {
   const [text, setText] = useState<string>("");
   const [translatedImages, setTranslatedImages] = useState<string[]>([]);
@@ -176,10 +178,10 @@ const TextToSign: React.FC<TextToSignProps> = ({
       <TranslationLayout
         isDarkMode={isDarkMode}
         onSwitchMode={onSwitchMode}
-        isClockwise={false}
         leftContent={leftContent}
         rightContent={rightContent}
         isTransitioning={isTransitioning}
+        animationDirection={animationDirection}
       />
     </>
   );

@@ -7,19 +7,19 @@ import ReverseButton from './ReverseButton';
 interface TranslationLayoutProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
-  isClockwise: boolean;
   leftContent: ReactNode;
   rightContent: ReactNode;
   isTransitioning: boolean;
+  animationDirection: "clockwise" | "anticlockwise" | "none";
 }
 
 const TranslationLayout: React.FC<TranslationLayoutProps> = ({
   isDarkMode,
   onSwitchMode,
-  isClockwise,
   leftContent,
   rightContent,
-  isTransitioning
+  isTransitioning,
+  animationDirection
 }) => {
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,7 +34,7 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
             damping: 20,
             duration: 0.6,
           }}
-          key={`left-${isClockwise}`}
+          key={`left-${animationDirection}`}
         >
           {leftContent}
         </motion.div>
@@ -42,9 +42,9 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <ReverseButton
             onClick={onSwitchMode}
-            isClockwise={isClockwise}
             isDarkMode={isDarkMode}
             isTransitioning={isTransitioning}
+            animationDirection={animationDirection}
           />
         </div>
 
@@ -58,7 +58,7 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
             damping: 20,
             duration: 0.6,
           }}
-          key={`right-${isClockwise}`}
+          key={`right-${animationDirection}`}
         >
           {rightContent}
         </motion.div>
@@ -68,4 +68,3 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
 };
 
 export default TranslationLayout;
-
