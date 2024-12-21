@@ -19,15 +19,25 @@ const TextToSign: React.FC<TextToSignProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const images = text
-      .toUpperCase()
       .split("")
       .map((char) => {
-        if (char >= "A" && char <= "Z") {
-          return `/images/alphabets/${char}.png`;
+        const upperChar = char.toUpperCase();
+        if (upperChar >= "A" && upperChar <= "Z") {
+          return `/images/alphabets/${upperChar}.png`;
+        } else if (char === " ") {
+          return "/images/alphabets/SPACE.png";
+        } else if (char === ",") {
+          return "/images/alphabets/COMMA.png";
+        } else if (char === ".") {
+          return "/images/alphabets/PERIOD.png";
+        } else if (char === "?") {
+          return "/images/alphabets/QUESTION.png";
+        } else if (char === "!") {
+          return "/images/alphabets/EXCLAMATION.png";
+        } else {
+          return "/images/alphabets/UNKNOWN.png";
         }
-        return null;
-      })
-      .filter(Boolean) as string[];
+      });
     setTranslatedImages(images);
     setCurrentImageIndex(0);
     setIsTranslating(true);
@@ -136,14 +146,21 @@ const TextToSign: React.FC<TextToSignProps> = ({
           <div
             className={`${
               isDarkMode ? "bg-gray-800" : "bg-gray-100"
-            } p-4 rounded-lg flex-grow mb-4 shadow-inner overflow-auto h-[400px] flex items-center justify-center`}
+            } p-4 rounded-lg flex-grow mb-4 shadow-inner overflow-hidden h-[400px] flex items-center justify-center`}
           >
             {isTranslating && translatedImages.length > 0 ? (
-              <img
-                src={translatedImages[currentImageIndex]}
-                alt={`Sign for ${text[currentImageIndex]}`}
-                className="max-w-full max-h-full object-contain"
-              />
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={translatedImages[currentImageIndex]}
+                  alt={`Sign for ${text[currentImageIndex]}`}
+                  className="max-w-full max-h-full object-contain"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
             ) : (
               <p
                 className={`text-xl ${
