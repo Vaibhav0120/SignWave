@@ -9,19 +9,22 @@ interface ReverseButtonProps {
   onClick: () => void;
   isClockwise?: boolean;
   isDarkMode: boolean;
+  isTransitioning: boolean;
 }
 
-const ReverseButton: React.FC<ReverseButtonProps> = ({ onClick, isClockwise = true, isDarkMode }) => {
+const ReverseButton: React.FC<ReverseButtonProps> = ({ onClick, isClockwise = true, isDarkMode, isTransitioning }) => {
   return (
     <motion.div
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
+      animate={{ rotate: isTransitioning ? 360 : 0 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
     >
       <Button
         onClick={onClick}
         variant="ghost"
         className={`
-          flex items-center justify-center w-14 h-14 rounded-full
+          flex items-center justify-center w-12 h-12 rounded-full
           ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'}
           transition-all duration-200 ease-in-out shadow-lg hover:shadow-xl
         `}

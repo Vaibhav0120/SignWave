@@ -7,11 +7,13 @@ import TranslationLayout from "../components/TranslationLayout";
 interface TextToSignProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
+  isTransitioning: boolean;
 }
 
 const TextToSign: React.FC<TextToSignProps> = ({
   isDarkMode,
   onSwitchMode,
+  isTransitioning,
 }) => {
   const [text, setText] = useState<string>("");
   const [translatedImages, setTranslatedImages] = useState<string[]>([]);
@@ -144,7 +146,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
             <img
               src={translatedImages[currentImageIndex]}
               alt={`Sign for ${text[currentImageIndex]}`}
-              className="max-w-full max-h-full object-contain"
+              className="w-full h-full object-contain"
             />
           </div>
         ) : (
@@ -177,9 +179,11 @@ const TextToSign: React.FC<TextToSignProps> = ({
         isClockwise={false}
         leftContent={leftContent}
         rightContent={rightContent}
+        isTransitioning={isTransitioning}
       />
     </>
   );
 };
 
 export default TextToSign;
+

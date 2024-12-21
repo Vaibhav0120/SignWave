@@ -9,6 +9,7 @@ import CursorGradient from "./components/CursorGradient";
 const AppContent: React.FC = () => {
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,11 +34,13 @@ const AppContent: React.FC = () => {
   };
 
   const handleSwitchMode = () => {
+    setIsTransitioning(true);
     if (location.pathname === "/sign-to-text") {
       navigate("/text-to-sign");
     } else if (location.pathname === "/text-to-sign") {
       navigate("/sign-to-text");
     }
+    setTimeout(() => setIsTransitioning(false), 500); // Match this with the animation duration
   };
 
   return (
@@ -53,6 +56,7 @@ const AppContent: React.FC = () => {
                 isBackendConnected={isBackendConnected} 
                 isDarkMode={isDarkMode} 
                 onSwitchMode={handleSwitchMode}
+                isTransitioning={isTransitioning}
               />
             }
           />
@@ -62,6 +66,7 @@ const AppContent: React.FC = () => {
               <TextToSign 
                 isDarkMode={isDarkMode} 
                 onSwitchMode={handleSwitchMode}
+                isTransitioning={isTransitioning}
               />
             }
           />
@@ -81,3 +86,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

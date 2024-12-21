@@ -10,6 +10,7 @@ interface TranslationLayoutProps {
   isClockwise: boolean;
   leftContent: ReactNode;
   rightContent: ReactNode;
+  isTransitioning: boolean;
 }
 
 const TranslationLayout: React.FC<TranslationLayoutProps> = ({
@@ -17,13 +18,14 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
   onSwitchMode,
   isClockwise,
   leftContent,
-  rightContent
+  rightContent,
+  isTransitioning
 }) => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-center relative">
         <motion.div
-          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[320px] max-w-[600px] max-h-[600px] aspect-square"
+          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[280px] max-w-[600px] max-h-[500px] aspect-square"
           initial={false}
           animate={{ x: [null, -20, 0], opacity: [null, 0.5, 1] }}
           transition={{
@@ -42,11 +44,12 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
             onClick={onSwitchMode}
             isClockwise={isClockwise}
             isDarkMode={isDarkMode}
+            isTransitioning={isTransitioning}
           />
         </div>
 
         <motion.div
-          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[320px] max-w-[600px] max-h-[600px] aspect-square"
+          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[280px] max-w-[600px] max-h-[500px] aspect-square"
           initial={false}
           animate={{ x: [null, 20, 0], opacity: [null, 0.5, 1] }}
           transition={{

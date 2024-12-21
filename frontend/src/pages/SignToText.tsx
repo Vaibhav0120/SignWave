@@ -11,12 +11,14 @@ interface SignToTextProps {
   isBackendConnected: boolean;
   isDarkMode: boolean;
   onSwitchMode: () => void;
+  isTransitioning: boolean;
 }
 
 const SignToText: React.FC<SignToTextProps> = ({
   isBackendConnected: initialBackendState,
   isDarkMode,
   onSwitchMode,
+  isTransitioning,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -236,9 +238,11 @@ const SignToText: React.FC<SignToTextProps> = ({
         isClockwise={true}
         leftContent={leftContent}
         rightContent={rightContent}
+        isTransitioning={isTransitioning}
       />
     </>
   );
 };
 
 export default SignToText;
+
