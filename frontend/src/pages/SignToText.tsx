@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import CameraOffSign from "../components/CameraOffSign";
 import TranslationLayout from "../components/TranslationLayout";
@@ -22,12 +22,108 @@ const SignToText: React.FC<SignToTextProps> = ({
   animationDirection,
   isSignToText,
 }) => {
-  const [showBackendAlert, setShowBackendAlert] = useState<boolean>(true);
+  const [showBackendAlert, setShowBackendAlert] = useState<boolean>(false);
+  const [showCameraAlert, setShowCameraAlert] = useState<boolean>(false);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [translatedText, setTranslatedText] = useState<string>("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+      }
+      setIsTranslating(true);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      setShowCameraAlert(true);
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+    setIsTranslating(false);
+  }, []);
+
+  const drawVideoFrame = useCallback(() => {
+    if (videoRef.current && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, -canvasRef.current.width, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.restore();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    if (isTranslating) {
+      const animate = () => {
+        drawVideoFrame();
+        animationFrameId = requestAnimationFrame(animate);
+      };
+      animate();
+    }
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isTranslating, drawVideoFrame]);
+
+  const toggleTranslation = () => {
+    if (isTranslating) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const leftContent = (
     <div className="h-full flex flex-col">
-      <div className="relative flex-grow mb-4">
-        <CameraOffSign />
+      <div className="relative flex-grow mb-4 bg-black rounded-lg overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="hidden"
+        />
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          width={640}
+          height={480}
+        />
+        {!isTranslating && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <CameraOffSign />
+          </div>
+        )}
       </div>
       <div className="flex justify-center">
         <Button
@@ -36,8 +132,9 @@ const SignToText: React.FC<SignToTextProps> = ({
           className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
             isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
           } text-white`}
+          onClick={toggleTranslation}
         >
-          Start Translating
+          {isTranslating ? "Stop Translating" : "Start Translating"}
         </Button>
       </div>
     </div>
@@ -60,7 +157,7 @@ const SignToText: React.FC<SignToTextProps> = ({
         }`}
       >
         <p className={`text-lg ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-          Start translating to see the result
+          {translatedText || "Start translating to see the result"}
         </p>
       </div>
       <div className="flex justify-between items-center">
@@ -71,10 +168,11 @@ const SignToText: React.FC<SignToTextProps> = ({
             className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
               isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
             }`}
+            onClick={() => setTranslatedText("")}
           >
             Clear
           </Button>
-          <TextToSpeech text="" isDarkMode={isDarkMode} />
+          <TextToSpeech text={translatedText} isDarkMode={isDarkMode} />
         </div>
         <div
           className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}
@@ -97,8 +195,16 @@ const SignToText: React.FC<SignToTextProps> = ({
       {showBackendAlert && (
         <Alert
           message="Backend not connected"
-          details="Backend connection not implemented yet."
+          details="Unable to connect to the translation service."
           onClose={() => setShowBackendAlert(false)}
+          isDarkMode={isDarkMode}
+        />
+      )}
+      {showCameraAlert && (
+        <Alert
+          message="Camera access failed"
+          details="Unable to access your camera. Please check your camera permissions and try again."
+          onClose={() => setShowCameraAlert(false)}
           isDarkMode={isDarkMode}
         />
       )}
@@ -116,4 +222,3 @@ const SignToText: React.FC<SignToTextProps> = ({
 };
 
 export default SignToText;
-
