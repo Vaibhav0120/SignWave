@@ -58,7 +58,7 @@ const AppContent: React.FC = () => {
       className={`App min-h-screen ${
         isDarkMode 
           ? "bg-gray-900 text-white" 
-          : "bg-[url('./images/Light_Theme.jpg')] bg-cover bg-center bg-no-repeat text-gray-900"
+          : "bg-[url('./images/Light_Theme.png')] bg-cover bg-center bg-no-repeat text-gray-900"
       } flex flex-col`}
     >
       <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
