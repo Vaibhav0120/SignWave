@@ -15,7 +15,7 @@ import TextToSign from "./pages/TextToSign";
 import CursorGradient from "./components/CursorGradient";
 
 const AppContent: React.FC = () => {
-  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
+  // const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<string>("/");
@@ -23,26 +23,26 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const checkBackendConnection = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/health-check");
-        setIsBackendConnected(response.ok);
-      } catch (error) {
-        setIsBackendConnected(false);
-      }
-    };
+  // useEffect(() => {
+  //   const checkBackendConnection = async () => {
+  //     try {
+  //       const response = await fetch("http://localhost:5000/api/health-check");
+  //       setIsBackendConnected(response.ok);
+  //     } catch (error) {
+  //       setIsBackendConnected(false);
+  //     }
+  //   };
 
-    checkBackendConnection();
-    const intervalId = setInterval(checkBackendConnection, 30000);
+  //   checkBackendConnection();
+  //   const intervalId = setInterval(checkBackendConnection, 30000);
 
-    return () => clearInterval(intervalId);
-  }, []);
+  //   return () => clearInterval(intervalId);
+  // }, []);
 
   useEffect(() => {
     setPreviousPage(currentPage);
     setCurrentPage(location.pathname);
-  }, [location.pathname]);
+  }, [location.pathname, currentPage]);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -84,7 +84,7 @@ const AppContent: React.FC = () => {
             path="/sign-to-text"
             element={
               <SignToText
-                isBackendConnected={isBackendConnected}
+                // isBackendConnected={isBackendConnected}
                 isDarkMode={isDarkMode}
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
@@ -121,3 +121,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
