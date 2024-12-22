@@ -32,7 +32,13 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const startCamera = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -93,6 +99,8 @@ const SignToText: React.FC<SignToTextProps> = ({
       stopCamera();
     } else {
       startCamera();
+      // Simulate backend connection failure
+      setShowBackendAlert(true);
     }
   };
 
@@ -103,6 +111,16 @@ const SignToText: React.FC<SignToTextProps> = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (showBackendAlert) {
+      const timer = setTimeout(() => {
+        setShowBackendAlert(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showBackendAlert]);
 
   const leftContent = (
     <div className="h-full flex flex-col">
@@ -116,8 +134,8 @@ const SignToText: React.FC<SignToTextProps> = ({
         <canvas
           ref={canvasRef}
           className="w-full h-full object-cover"
-          width={640}
-          height={480}
+          width={1280}
+          height={720}
         />
         {!isTranslating && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -222,3 +240,4 @@ const SignToText: React.FC<SignToTextProps> = ({
 };
 
 export default SignToText;
+
