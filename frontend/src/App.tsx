@@ -1,5 +1,13 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import SignToText from "./pages/SignToText";
@@ -63,7 +71,11 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className={`App min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} flex flex-col`}>
+    <div
+      className={`App min-h-screen ${
+        isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
+      } flex flex-col`}
+    >
       <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
       <main className="flex-grow container mx-auto px-4 py-8">
         <Routes>
@@ -71,23 +83,25 @@ const AppContent: React.FC = () => {
           <Route
             path="/sign-to-text"
             element={
-              <SignToText 
-                isBackendConnected={isBackendConnected} 
-                isDarkMode={isDarkMode} 
+              <SignToText
+                isBackendConnected={isBackendConnected}
+                isDarkMode={isDarkMode}
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
                 animationDirection={getAnimationDirection()}
+                isSignToText={true}
               />
             }
           />
           <Route
             path="/text-to-sign"
             element={
-              <TextToSign 
-                isDarkMode={isDarkMode} 
+              <TextToSign
+                isDarkMode={isDarkMode}
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
                 animationDirection={getAnimationDirection()}
+                isSignToText={false}
               />
             }
           />

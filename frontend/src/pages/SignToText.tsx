@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TextToSpeech from "../components/TextToSpeech";
 import CameraOffSign from "../components/CameraOffSign";
 import TranslationLayout from "../components/TranslationLayout";
-import { Spinner } from './../components/ui/spinner';
+import { Spinner } from '../components/ui/spinner';
 
 interface SignToTextProps {
   isBackendConnected: boolean;
@@ -13,6 +13,7 @@ interface SignToTextProps {
   onSwitchMode: () => void;
   isTransitioning: boolean;
   animationDirection: "clockwise" | "anticlockwise" | "none";
+  isSignToText: boolean;
 }
 
 const SignToText: React.FC<SignToTextProps> = ({
@@ -247,6 +248,7 @@ const SignToText: React.FC<SignToTextProps> = ({
         rightContent={rightContent}
         isTransitioning={isTransitioning}
         animationDirection={animationDirection}
+        isSignToText={true}
       />
     </>
   );

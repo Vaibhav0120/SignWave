@@ -1,16 +1,17 @@
 "use client"
 
-import React, { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import ReverseButton from './ReverseButton';
+import React from "react";
+import { motion } from "framer-motion";
+import ReverseButton from "./ReverseButton";
 
 interface TranslationLayoutProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
-  leftContent: ReactNode;
-  rightContent: ReactNode;
+  leftContent: React.ReactNode;
+  rightContent: React.ReactNode;
   isTransitioning: boolean;
   animationDirection: "clockwise" | "anticlockwise" | "none";
+  isSignToText: boolean;
 }
 
 const TranslationLayout: React.FC<TranslationLayoutProps> = ({
@@ -19,51 +20,72 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
   leftContent,
   rightContent,
   isTransitioning,
-  animationDirection
+  animationDirection,
+  isSignToText,
 }) => {
+  const containerVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.5 } },
+  };
+
+  const boxVariants = {
+    initial: { y: 0 },
+    bounceSignToText: (isLeft: boolean) => ({
+      y: isLeft ? -20 : 20,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    }),
+    bounceTextToSign: (isLeft: boolean) => ({
+      y: isLeft ? 20 : -20,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    }),
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-center relative">
-        <motion.div
-          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[280px] max-w-[600px] max-h-[500px] aspect-square"
-          initial={false}
-          animate={{ x: [null, -20, 0], opacity: [null, 0.5, 1] }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 20,
-            duration: 0.6,
-          }}
-          key={`left-${animationDirection}`}
-        >
-          {leftContent}
-        </motion.div>
-
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-          <ReverseButton
-            onClick={onSwitchMode}
-            isDarkMode={isDarkMode}
-            isTransitioning={isTransitioning}
-            animationDirection={animationDirection}
-          />
-        </div>
-
-        <motion.div
-          className="w-full md:w-[calc(50%-1rem)] min-w-[320px] min-h-[280px] max-w-[600px] max-h-[500px] aspect-square"
-          initial={false}
-          animate={{ x: [null, 20, 0], opacity: [null, 0.5, 1] }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 20,
-            duration: 0.6,
-          }}
-          key={`right-${animationDirection}`}
-        >
-          {rightContent}
-        </motion.div>
+    <motion.div
+      className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]"
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div
+        className={`flex-1 p-4 rounded-lg ${
+          isDarkMode ? "bg-gray-800" : "bg-gray-100"
+        } overflow-auto`}
+        variants={boxVariants}
+        animate={isTransitioning ? (isSignToText ? "bounceSignToText" : "bounceTextToSign") : "initial"}
+        custom={true} // isLeft = true
+      >
+        {leftContent}
+      </motion.div>
+      <div className="flex items-center justify-center">
+        <ReverseButton
+          onClick={onSwitchMode}
+          isDarkMode={isDarkMode}
+          isTransitioning={isTransitioning}
+          animationDirection={animationDirection}
+        />
       </div>
-    </div>
+      <motion.div
+        className={`flex-1 p-4 rounded-lg ${
+          isDarkMode ? "bg-gray-800" : "bg-gray-100"
+        } overflow-auto`}
+        variants={boxVariants}
+        animate={isTransitioning ? (isSignToText ? "bounceSignToText" : "bounceTextToSign") : "initial"}
+        custom={false} // isLeft = false
+      >
+        {rightContent}
+      </motion.div>
+    </motion.div>
   );
 };
 

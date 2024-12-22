@@ -9,6 +9,7 @@ interface TextToSignProps {
   onSwitchMode: () => void;
   isTransitioning: boolean;
   animationDirection: "clockwise" | "anticlockwise" | "none";
+  isSignToText: boolean;
 }
 
 const TextToSign: React.FC<TextToSignProps> = ({
@@ -83,7 +84,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
               isDarkMode ? "text-gray-300" : "text-gray-700"
             } mb-2`}
           >
-            Enter text to translate:
+            Enter text totranslate:
           </label>
           <textarea
             id="text"
@@ -188,6 +189,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
         rightContent={rightContent}
         isTransitioning={isTransitioning}
         animationDirection={animationDirection}
+        isSignToText={false}
       />
     </>
   );
