@@ -15,29 +15,12 @@ import TextToSign from "./pages/TextToSign";
 import CursorGradient from "./components/CursorGradient";
 
 const AppContent: React.FC = () => {
-  // const [isBackendConnected, setIsBackendConnected] = useState<boolean>(true);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<string>("/");
   const [previousPage, setPreviousPage] = useState<string>("/");
   const navigate = useNavigate();
   const location = useLocation();
-
-  // useEffect(() => {
-  //   const checkBackendConnection = async () => {
-  //     try {
-  //       const response = await fetch("http://localhost:5000/api/health-check");
-  //       setIsBackendConnected(response.ok);
-  //     } catch (error) {
-  //       setIsBackendConnected(false);
-  //     }
-  //   };
-
-  //   checkBackendConnection();
-  //   const intervalId = setInterval(checkBackendConnection, 30000);
-
-  //   return () => clearInterval(intervalId);
-  // }, []);
 
   useEffect(() => {
     setPreviousPage(currentPage);
@@ -73,7 +56,9 @@ const AppContent: React.FC = () => {
   return (
     <div
       className={`App min-h-screen ${
-        isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
+        isDarkMode 
+          ? "bg-gray-900 text-white" 
+          : "bg-[url('./images/Light_Theme.jpg')] bg-cover bg-center bg-no-repeat text-gray-900"
       } flex flex-col`}
     >
       <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
@@ -84,7 +69,6 @@ const AppContent: React.FC = () => {
             path="/sign-to-text"
             element={
               <SignToText
-                // isBackendConnected={isBackendConnected}
                 isDarkMode={isDarkMode}
                 onSwitchMode={handleSwitchMode}
                 isTransitioning={isTransitioning}
@@ -121,4 +105,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

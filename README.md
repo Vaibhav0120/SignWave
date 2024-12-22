@@ -57,6 +57,8 @@ SignWave/
 │   │   │   └── ui/
 │   │   │       ├── button.tsx
 │   │   │       └── spinner.tsx
+│   │   ├── images/
+│   │   │   └── Light_Theme.jpg
 │   │   ├── pages/
 │   │   │   ├── Home.tsx
 │   │   │   ├── SignToText.tsx

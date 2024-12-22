@@ -202,7 +202,7 @@ const SignToText: React.FC<SignToTextProps> = ({
   );
 
   return (
-    <>
+    <div className="min-h-screen">
       <h1
         className={`text-3xl font-bold mb-6 ${
           isDarkMode ? "text-white" : "text-gray-900"
@@ -235,9 +235,8 @@ const SignToText: React.FC<SignToTextProps> = ({
         animationDirection={animationDirection}
         isSignToText={isSignToText}
       />
-    </>
+    </div>
   );
 };
 
 export default SignToText;
-

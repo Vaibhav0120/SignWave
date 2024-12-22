@@ -84,13 +84,13 @@ const TextToSign: React.FC<TextToSignProps> = ({
               isDarkMode ? "text-gray-300" : "text-gray-700"
             } mb-2`}
           >
-            Enter text totranslate:
+            Enter text to translate:
           </label>
           <textarea
             id="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className={`w-full h-[calc(100%-4rem)] px-4 py-3 ${
+            className={`w-full h-[calc(100%-4rem)] px-4py-3 ${
               isDarkMode
                 ? "bg-gray-700 text-white border-gray-600"
                 : "bg-white text-gray-900 border-gray-300"
@@ -174,7 +174,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
   );
 
   return (
-    <>
+    <div className="min-h-screen">
       <h1
         className={`text-3xl font-bold mb-6 ${
           isDarkMode ? "text-white" : "text-gray-900"
@@ -191,8 +191,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
         animationDirection={animationDirection}
         isSignToText={false}
       />
-    </>
+    </div>
   );
 };
 
 export default TextToSign;
+
