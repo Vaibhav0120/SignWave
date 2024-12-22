@@ -6,6 +6,7 @@ import TextToSpeech from "../components/TextToSpeech";
 import CameraOffSign from "../components/CameraOffSign";
 import TranslationLayout from "../components/TranslationLayout";
 import { Spinner } from '../components/ui/spinner';
+import Alert from '../components/Alert';
 
 interface SignToTextProps {
   isBackendConnected: boolean;
@@ -22,6 +23,7 @@ const SignToText: React.FC<SignToTextProps> = ({
   onSwitchMode,
   isTransitioning,
   animationDirection,
+  isSignToText,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -130,9 +132,16 @@ const SignToText: React.FC<SignToTextProps> = ({
       try {
         const response = await fetch("/api/health-check");
         setIsBackendConnected(response.ok);
+        if (response.ok) {
+          setError(null);
+        }
       } catch (err) {
         console.error("Error checking backend connection:", err);
         setIsBackendConnected(false);
+        setError({
+          message: "Backend connection failed",
+          details: "Unable to connect to the backend server",
+        });
       }
     };
 
@@ -236,10 +245,12 @@ const SignToText: React.FC<SignToTextProps> = ({
         Sign to Text
       </h1>
       {error && (
-        <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
-          <p className="font-bold">{error.message}</p>
-          {error.details && <p className="mt-2 text-sm">{error.details}</p>}
-        </div>
+        <Alert
+          message={error.message}
+          details={error.details}
+          onClose={() => setError(null)}
+          isDarkMode={isDarkMode}
+        />
       )}
       <TranslationLayout
         isDarkMode={isDarkMode}
@@ -248,10 +259,11 @@ const SignToText: React.FC<SignToTextProps> = ({
         rightContent={rightContent}
         isTransitioning={isTransitioning}
         animationDirection={animationDirection}
-        isSignToText={true}
+        isSignToText={isSignToText}
       />
     </>
   );
 };
 
 export default SignToText;
+
