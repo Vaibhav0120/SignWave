@@ -2,6 +2,7 @@
 
 SignWave is a web application that bridges communication gaps with sign language translation technology. It offers two main features: Sign to Text and Text to Sign.
 
+[Watch It Live](https://sign-wave-gamma.vercel.app/)
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
