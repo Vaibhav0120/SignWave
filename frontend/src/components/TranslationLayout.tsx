@@ -27,7 +27,7 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsVerticalLayout(window.innerWidth < 1200 || window.innerHeight < 800);
+      setIsVerticalLayout(window.innerWidth < 1024 || window.innerHeight < 600);
     };
 
     handleResize(); // Initial check
