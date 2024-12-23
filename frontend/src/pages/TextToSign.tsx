@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TranslationLayout from "../components/TranslationLayout";
+import { Mic } from 'lucide-react';
 
 interface TextToSignProps {
   isDarkMode: boolean;
@@ -23,9 +24,14 @@ const TextToSign: React.FC<TextToSignProps> = ({
   const [translatedImages, setTranslatedImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [isListening, setIsListening] = useState<boolean>(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isTranslating) {
+      setIsTranslating(false);
+      return;
+    }
     const images = text
       .split("")
       .map((char) => {
@@ -57,6 +63,40 @@ const TextToSign: React.FC<TextToSignProps> = ({
     setCurrentImageIndex(0);
     setIsTranslating(false);
   };
+
+  const handleSpeak = useCallback((e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new (window as any).webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setText((prevText) => {
+          const newText = prevText + transcript;
+          return newText.charAt(0) === ' ' ? newText.slice(1) : newText;
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } else {
+      alert('Speech recognition is not supported in your browser.');
+    }
+  }, []);
 
   useEffect(() => {
     if (isTranslating && translatedImages.length > 0) {
@@ -113,14 +153,27 @@ const TextToSign: React.FC<TextToSignProps> = ({
               Clear
             </Button>
             <Button
-              type="submit"
-              disabled={isTranslating}
+              onClick={handleSpeak}
+              variant="outline"
               size="sm"
               className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-                isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'
+                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+              } ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
+            >
+              <Mic className={`w-4 h-4 ${isListening ? 'animate-pulse' : ''}`} />
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isTranslating
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : isDarkMode
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-green-500 hover:bg-green-600'
               } text-white`}
             >
-              {isTranslating ? "Translating..." : "Translate"}
+              {isTranslating ? "STOP" : "Translate"}
             </Button>
           </div>
           <div className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
