@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ReverseButton from "./ReverseButton";
 
@@ -23,6 +23,21 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
   animationDirection,
   isSignToText,
 }) => {
+  const [isVerticalLayout, setIsVerticalLayout] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsVerticalLayout(window.innerWidth < 1200 || window.innerHeight < 800);
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const containerVariants = {
     initial: { opacity: 0 },
     animate: { opacity: 1, transition: { duration: 0.5 } },
@@ -30,8 +45,8 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
   };
 
   const boxVariants = {
-    initial: { y: 0 },
-    bounceSignToText: (isLeft: boolean) => ({
+    initial: { x: 0, y: 0 },
+    bounceSignToTextDesktop: (isLeft: boolean) => ({
       y: isLeft ? -20 : 20,
       transition: {
         type: "spring",
@@ -39,8 +54,24 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
         damping: 10,
       },
     }),
-    bounceTextToSign: (isLeft: boolean) => ({
+    bounceTextToSignDesktop: (isLeft: boolean) => ({
       y: isLeft ? 20 : -20,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    }),
+    bounceSignToTextMobile: (isLeft: boolean) => ({
+      x: isLeft ? -20 : 20,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    }),
+    bounceTextToSignMobile: (isLeft: boolean) => ({
+      x: isLeft ? 20 : -20,
       transition: {
         type: "spring",
         stiffness: 100,
@@ -49,9 +80,17 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
     }),
   };
 
+  const getAnimationVariant = (isSignToText: boolean, isVerticalLayout: boolean, isLeft: boolean) => {
+    if (isVerticalLayout) {
+      return isSignToText ? "bounceSignToTextMobile" : "bounceTextToSignMobile";
+    } else {
+      return isSignToText ? "bounceSignToTextDesktop" : "bounceTextToSignDesktop";
+    }
+  };
+
   return (
     <motion.div
-      className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]"
+      className={`flex ${isVerticalLayout ? 'flex-col' : 'flex-row'} gap-4 h-[calc(100vh-12rem)] min-h-[500px] max-h-[calc(100vh-12rem)]`}
       variants={containerVariants}
       initial="initial"
       animate="animate"
@@ -60,14 +99,16 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
       <motion.div
         className={`flex-1 p-4 rounded-lg ${
           isDarkMode ? "bg-gray-800" : "bg-gray-100"
-        } overflow-auto`}
+        } overflow-hidden ${isVerticalLayout ? 'h-[calc(50%-2rem)]' : 'h-full'}`}
         variants={boxVariants}
-        animate={isTransitioning ? (isSignToText ? "bounceSignToText" : "bounceTextToSign") : "initial"}
+        animate={isTransitioning ? getAnimationVariant(isSignToText, isVerticalLayout, true) : "initial"}
         custom={true} // isLeft = true
       >
-        {leftContent}
+        <div className="h-full overflow-auto">
+          {leftContent}
+        </div>
       </motion.div>
-      <div className="flex items-center justify-center">
+      <div className={`flex ${isVerticalLayout ? 'justify-center py-2' : 'items-center justify-center'}`}>
         <ReverseButton
           onClick={onSwitchMode}
           isDarkMode={isDarkMode}
@@ -78,15 +119,18 @@ const TranslationLayout: React.FC<TranslationLayoutProps> = ({
       <motion.div
         className={`flex-1 p-4 rounded-lg ${
           isDarkMode ? "bg-gray-800" : "bg-gray-100"
-        } overflow-auto`}
+        } overflow-hidden ${isVerticalLayout ? 'h-[calc(50%-2rem)]' : 'h-full'}`}
         variants={boxVariants}
-        animate={isTransitioning ? (isSignToText ? "bounceSignToText" : "bounceTextToSign") : "initial"}
+        animate={isTransitioning ? getAnimationVariant(isSignToText, isVerticalLayout, false) : "initial"}
         custom={false} // isLeft = false
       >
-        {rightContent}
+        <div className="h-full overflow-auto">
+          {rightContent}
+        </div>
       </motion.div>
     </motion.div>
   );
 };
 
 export default TranslationLayout;
+

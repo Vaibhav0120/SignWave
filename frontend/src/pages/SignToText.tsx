@@ -32,13 +32,26 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const startCamera = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints: MediaStreamConstraints = {
         video: {
+          facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'user'
         }
-      });
+      };
+
+      // For iOS 14.3+
+      if (navigator.mediaDevices.getSupportedConstraints().facingMode) {
+        if (typeof constraints.video === 'object') {
+          constraints.video = {
+            ...constraints.video,
+            facingMode: { exact: 'user' },
+          };
+        }
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -124,16 +137,16 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const leftContent = (
     <div className="h-full flex flex-col">
-      <div className="relative flex-grow mb-4 bg-black rounded-lg overflow-hidden">
+      <div className="relative h-[calc(100%-3rem)] mb-4 bg-black rounded-lg overflow-hidden">
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className="hidden"
+          className="w-full h-full object-cover"
         />
         <canvas
           ref={canvasRef}
-          className="w-full h-full object-cover"
+          className="absolute top-0 left-0 w-full h-full object-cover"
           width={1280}
           height={720}
         />
@@ -170,7 +183,7 @@ const SignToText: React.FC<SignToTextProps> = ({
       <div
         className={`${
           isDarkMode ? "bg-gray-800" : "bg-white"
-        } p-4 rounded-lg flex-grow mb-2 shadow-inner overflow-auto border-2 ${
+        } p-4 rounded-lg h-[calc(100%-5rem)] mb-2 shadow-inner overflow-auto border-2 ${
           isDarkMode ? "border-gray-700" : "border-gray-300"
         }`}
       >
@@ -202,9 +215,9 @@ const SignToText: React.FC<SignToTextProps> = ({
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen overflow-hidden">
       <h1
-        className={`text-3xl font-bold mb-6 ${
+        className={`text-3xl font-bold mb-4 ${
           isDarkMode ? "text-white" : "text-gray-900"
         } text-center`}
       >
@@ -240,3 +253,4 @@ const SignToText: React.FC<SignToTextProps> = ({
 };
 
 export default SignToText;
+

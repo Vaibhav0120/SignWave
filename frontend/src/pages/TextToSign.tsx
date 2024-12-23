@@ -17,6 +17,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
   onSwitchMode,
   isTransitioning,
   animationDirection,
+  isSignToText,
 }) => {
   const [text, setText] = useState<string>("");
   const [translatedImages, setTranslatedImages] = useState<string[]>([]);
@@ -90,7 +91,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
             id="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className={`w-full h-[calc(100%-4rem)] px-4py-3 ${
+            className={`w-full h-[calc(100%-5rem)] px-4 py-3 ${
               isDarkMode
                 ? "bg-gray-700 text-white border-gray-600"
                 : "bg-white text-gray-900 border-gray-300"
@@ -146,7 +147,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
       <div
         className={`${
           isDarkMode ? "bg-gray-800" : "bg-white"
-        } p-4 rounded-lg flex-grow shadow-inner overflow-hidden flex items-center justify-center border-2 ${
+        } p-4 rounded-lg h-[calc(100%-5rem)] shadow-inner overflow-hidden flex items-center justify-center border-2 ${
           isDarkMode ? "border-gray-700" : "border-gray-300"
         }`}
       >
@@ -174,9 +175,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen overflow-hidden">
       <h1
-        className={`text-3xl font-bold mb-6 ${
+        className={`text-3xl font-bold mb-4 ${
           isDarkMode ? "text-white" : "text-gray-900"
         } text-center`}
       >
@@ -189,7 +190,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
         rightContent={rightContent}
         isTransitioning={isTransitioning}
         animationDirection={animationDirection}
-        isSignToText={false}
+        isSignToText={isSignToText}
       />
     </div>
   );
