@@ -83,25 +83,9 @@ const SignToText: React.FC<SignToTextProps> = ({
     if (videoRef.current && canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
-        const videoAspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight;
-        const canvasAspectRatio = canvasRef.current.width / canvasRef.current.height;
-        
-        let drawWidth = canvasRef.current.width;
-        let drawHeight = canvasRef.current.height;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (videoAspectRatio > canvasAspectRatio) {
-          drawHeight = canvasRef.current.width / videoAspectRatio;
-          offsetY = (canvasRef.current.height - drawHeight) / 2;
-        } else {
-          drawWidth = canvasRef.current.height * videoAspectRatio;
-          offsetX = (canvasRef.current.width - drawWidth) / 2;
-        }
-
         ctx.save();
         ctx.scale(-1, 1);
-        ctx.drawImage(videoRef.current, -canvasRef.current.width - offsetX, offsetY, drawWidth, drawHeight);
+        ctx.drawImage(videoRef.current, -canvasRef.current.width, 0, canvasRef.current.width, canvasRef.current.height);
         ctx.restore();
       }
     }
@@ -153,28 +137,26 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const leftContent = (
     <div className="h-full flex flex-col">
-      <div className="relative mb-4 bg-black rounded-lg overflow-hidden" style={{ paddingTop: '56.25%' }}>
-        <div className="absolute inset-0">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className="w-full h-full object-cover"
-          />
-          <canvas
-            ref={canvasRef}
-            className="absolute top-0 left-0 w-full h-full object-cover"
-            width={1280}
-            height={720}
-          />
-          {!isTranslating && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <CameraOffSign />
-            </div>
-          )}
-        </div>
+      <div className="relative h-[calc(100%-3rem)] mb-4 bg-black rounded-lg overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+        />
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full object-cover"
+          width={1280}
+          height={720}
+        />
+        {!isTranslating && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <CameraOffSign />
+          </div>
+        )}
       </div>
-      <div className="flex justify-center mt-auto">
+      <div className="flex justify-center">
         <Button
           variant="default"
           size="sm"
@@ -201,7 +183,7 @@ const SignToText: React.FC<SignToTextProps> = ({
       <div
         className={`${
           isDarkMode ? "bg-gray-800" : "bg-white"
-        } p-4 rounded-lg flex-grow mb-2 shadow-inner overflow-auto border-2 ${
+        } p-4 rounded-lg h-[calc(100%-5rem)] mb-2 shadow-inner overflow-auto border-2 ${
           isDarkMode ? "border-gray-700" : "border-gray-300"
         }`}
       >
@@ -209,7 +191,7 @@ const SignToText: React.FC<SignToTextProps> = ({
           {translatedText || "Start translating to see the result"}
         </p>
       </div>
-      <div className="flex justify-between items-center mt-auto">
+      <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button
             variant="outline"
