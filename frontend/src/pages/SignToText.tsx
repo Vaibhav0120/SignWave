@@ -1,11 +1,11 @@
-"use client"
-
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "../components/ui/button";
+import ToggleSwitch from "../components/ui/toggleSwitch";
 import CameraOffSign from "../components/CameraOffSign";
 import TranslationLayout from "../components/TranslationLayout";
-import Alert from '../components/Alert';
-import TextToSpeech from '../components/TextToSpeech';
+import Alert from "../components/Alert";
+import TextToSpeech from "../components/TextToSpeech";
+import { performHandshake } from "../utils/api";
 
 interface SignToTextProps {
   isDarkMode: boolean;
@@ -23,35 +23,51 @@ const SignToText: React.FC<SignToTextProps> = ({
   isSignToText,
 }) => {
   const [showBackendAlert, setShowBackendAlert] = useState<boolean>(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
   const [showCameraAlert, setShowCameraAlert] = useState<boolean>(false);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translatedText, setTranslatedText] = useState<string>("");
+  const [isHandTrackingOn, setIsHandTrackingOn] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null); // Added error state
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const checkBackendConnection = useCallback(async () => {
+    try {
+      console.log("Checking backend connection...");
+      const isConnected = await performHandshake();
+      console.log("Backend connection status:", isConnected);
+      if (isConnected) {
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
+      } else {
+        setShowBackendAlert(true);
+      }
+    } catch (error) {
+      console.error("Error checking backend connection:", error);
+      setShowBackendAlert(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkBackendConnection();
+  }, [checkBackendConnection]);
+
   const startCamera = useCallback(async () => {
     try {
+      console.log("Starting camera...");
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: 'user',
+          facingMode: "user",
           width: { ideal: 1280 },
           height: { ideal: 720 },
-        }
+        },
       };
 
-      // For iOS 14.3+
-      if (navigator.mediaDevices.getSupportedConstraints().facingMode) {
-        if (typeof constraints.video === 'object') {
-          constraints.video = {
-            ...constraints.video,
-            facingMode: { exact: 'user' },
-          };
-        }
-      }
-
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+      console.log("Camera started successfully");
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -65,13 +81,13 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
+      const ctx = canvasRef.current.getContext("2d");
       if (ctx) {
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       }
@@ -81,46 +97,133 @@ const SignToText: React.FC<SignToTextProps> = ({
 
   const drawVideoFrame = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
+      const ctx = canvasRef.current.getContext("2d");
       if (ctx) {
         ctx.save();
         ctx.scale(-1, 1);
-        ctx.drawImage(videoRef.current, -canvasRef.current.width, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.drawImage(
+          videoRef.current,
+          -canvasRef.current.width,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
         ctx.restore();
       }
     }
   }, []);
 
+  const drawHandLandmarks = useCallback((landmarks: number[][]) => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        landmarks.forEach((point) => {
+          ctx.beginPath();
+          ctx.arc(
+            canvasRef.current!.width - point[0],
+            point[1],
+            5,
+            0,
+            2 * Math.PI
+          );
+          ctx.stroke();
+        });
+      }
+    }
+  }, []);
+
+  const predictSign = useCallback(async () => {
+    if (canvasRef.current) {
+      const imageData = canvasRef.current.toDataURL("image/jpeg");
+      try {
+        console.log("Sending prediction request to backend...");
+        const response = await fetch("http://localhost:5000/api/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image: imageData,
+            isHandTrackingOn: isHandTrackingOn,
+          }),
+        });
+        console.log("Received response from backend");
+        const data = await response.json();
+        console.log("Prediction data:", data);
+        if (data.error) {
+          setError(data.error);
+        } else if (data.prediction) {
+          if (data.prediction !== 'No hand detected') {
+            setTranslatedText((prevText) => {
+              const newText = prevText + data.prediction;
+              console.log("Updated translated text:", newText);
+              return newText;
+            });
+          } else {
+            console.log("No hand detected in this frame");
+          }
+          if (isHandTrackingOn && data.handLandmarks) {
+            console.log("Drawing hand landmarks");
+            drawHandLandmarks(data.handLandmarks);
+          }
+        }
+      } catch (error: any) {
+        console.error("Error predicting sign:", error);
+        setError("Unable to connect to the translation service. Please try again.");
+      }
+    }
+  }, [isHandTrackingOn, drawHandLandmarks]);
+
   useEffect(() => {
     let animationFrameId: number;
     if (isTranslating) {
+      console.log("Starting translation loop");
       const animate = () => {
         drawVideoFrame();
+        predictSign();
         animationFrameId = requestAnimationFrame(animate);
       };
       animate();
     }
     return () => {
       if (animationFrameId) {
+        console.log("Stopping translation loop");
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isTranslating, drawVideoFrame]);
+  }, [isTranslating, drawVideoFrame, predictSign]);
 
-  const toggleTranslation = () => {
+  const toggleTranslation = async () => {
     if (isTranslating) {
       stopCamera();
     } else {
-      startCamera();
-      // Simulate backend connection failure
-      setShowBackendAlert(true);
+      console.log("Checking backend connection before starting...");
+      try {
+        const isConnected = await performHandshake();
+        if (isConnected) {
+          console.log("Backend connected. Starting camera...");
+          startCamera();
+        } else {
+          console.error("Backend not connected. Cannot start translation.");
+          setShowBackendAlert(true);
+        }
+      } catch (error: any) {
+        console.error("Error checking backend connection:", error);
+        setError(`Connection error: ${error.message || 'Unknown error occurred'}`);
+      }
     }
+  };
+
+  const toggleHandTracking = () => {
+    setIsHandTrackingOn(!isHandTrackingOn);
   };
 
   useEffect(() => {
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
@@ -156,17 +259,31 @@ const SignToText: React.FC<SignToTextProps> = ({
           </div>
         )}
       </div>
-      <div className="flex justify-center">
+      <div className="flex justify-between items-center">
         <Button
           variant="default"
           size="sm"
           className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-            isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+            isDarkMode
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-blue-500 hover:bg-blue-600"
           } text-white`}
           onClick={toggleTranslation}
         >
           {isTranslating ? "Stop Translating" : "Start Translating"}
         </Button>
+        <div className="flex items-center">
+          <span
+            className={`mr-2 ${isDarkMode ? "text-white" : "text-gray-900"}`}
+          >
+            Hand Tracking
+          </span>
+          <ToggleSwitch
+            checked={isHandTrackingOn}
+            onChange={toggleHandTracking}
+            className="ml-2"
+          />
+        </div>
       </div>
     </div>
   );
@@ -197,7 +314,9 @@ const SignToText: React.FC<SignToTextProps> = ({
             variant="outline"
             size="sm"
             className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-              isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+              isDarkMode
+                ? "border-gray-600 hover:bg-gray-700"
+                : "border-gray-300 hover:bg-gray-100"
             }`}
             onClick={() => setTranslatedText("")}
           >
@@ -223,12 +342,22 @@ const SignToText: React.FC<SignToTextProps> = ({
       >
         Sign to Text
       </h1>
+      {showSuccessAlert && (
+        <Alert
+          message="Backend connected successfully"
+          details="The translation service is ready to use."
+          onClose={() => setShowSuccessAlert(false)}
+          isDarkMode={isDarkMode}
+          type="success"
+        />
+      )}
       {showBackendAlert && (
         <Alert
           message="Backend not connected"
           details="Unable to connect to the translation service."
           onClose={() => setShowBackendAlert(false)}
           isDarkMode={isDarkMode}
+          type="error"
         />
       )}
       {showCameraAlert && (
@@ -237,6 +366,16 @@ const SignToText: React.FC<SignToTextProps> = ({
           details="Unable to access your camera. Please check your camera permissions and try again."
           onClose={() => setShowCameraAlert(false)}
           isDarkMode={isDarkMode}
+          type="error"
+        />
+      )}
+      {error && (
+        <Alert
+          message="Error"
+          details={error}
+          onClose={() => setError(null)}
+          isDarkMode={isDarkMode}
+          type="error"
         />
       )}
       <TranslationLayout

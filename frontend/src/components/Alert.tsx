@@ -7,9 +7,10 @@ interface AlertProps {
   details?: string;
   onClose: () => void;
   isDarkMode: boolean;
+  type: 'success' | 'warning' | 'error';
 }
 
-const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode }) => {
+const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode, type }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -18,15 +19,20 @@ const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode }) 
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const getBackgroundColor = () => {
+    if (type === 'success') return isDarkMode ? 'bg-green-800' : 'bg-green-500';
+    if (type === 'warning') return isDarkMode ? 'bg-yellow-800' : 'bg-yellow-500';
+    if (type === 'error') return isDarkMode ? 'bg-red-800' : 'bg-red-500';
+    return isDarkMode ? 'bg-gray-800' : 'bg-blue-500';
+  };
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
-        className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md ${
-          isDarkMode ? 'bg-red-900' : 'bg-red-500'
-        } text-white p-4 rounded-lg shadow-lg`}
+        className={`fixed top-4 right-4 z-50 w-full max-w-md ${getBackgroundColor()} text-white p-4 rounded-lg shadow-lg`}
       >
         <div className="flex justify-between items-start">
           <div>
@@ -46,4 +52,3 @@ const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode }) 
 };
 
 export default Alert;
-

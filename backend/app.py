@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import cv2
 import numpy as np
-from keras.models import load_model
+import cv2
 import base64
-import traceback
+import io
+from PIL import Image
+import tensorflow as tf
 from cvzone.HandTrackingModule import HandDetector
 import logging
 
@@ -12,90 +13,87 @@ app = Flask(__name__)
 CORS(app)
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Load the pre-trained model
-model = load_model('cnn8grps_rad1_model.h5')
+# Load your trained model here
+model = tf.keras.models.load_model('cnn8grps_rad1_model.h5')
+logger.info("Model loaded successfully")
 
 # Initialize HandDetector
-hd = HandDetector(maxHands=1)
+hd = HandDetector(maxHands=1, detectionCon=0.8)
+logger.info("HandDetector initialized")
 
-def preprocess_image(image):
-    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Apply Gaussian blur
-    blur = cv2.GaussianBlur(gray, (5, 5), 2)
-    
-    # Apply adaptive thresholding
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-    
-    # Resize the image to match the input size of the model
-    resized = cv2.resize(thresh, (400, 400))
-    
-    # Convert to RGB (3 channels)
-    rgb = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
-    
-    return rgb
+# Define your classes
+classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-def detect_hand(image):
-    hands, _ = hd.findHands(image, draw=False, flipType=False)
-    if hands:
-        return hands[0]['bbox']
-    return None
-
-@app.route('/api/health-check', methods=['GET'])
-def health_check():
-    return jsonify({'status': 'ok'}), 200
+@app.route('/api/handshake', methods=['GET'])
+def handshake():
+    logger.info("Received handshake request")
+    return jsonify({'status': 'ok'})
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
+    logger.info("Received prediction request")
     try:
-        app.logger.info("Received prediction request")
+        # Get the image and hand tracking flag from the POST request
         data = request.json
-        image_data = data['image'].split(',')[1]
-        image = cv2.imdecode(np.frombuffer(base64.b64decode(image_data), np.uint8), cv2.IMREAD_COLOR)
+        img_data = data['image']
+        is_hand_tracking_on = data['isHandTrackingOn']
+        logger.info(f"Hand tracking is {'on' if is_hand_tracking_on else 'off'}")
         
-        app.logger.info(f"Received image shape: {image.shape}")
+        # Decode the base64 image
+        img_data = img_data.split(',')[1]  # Remove the "data:image/jpeg;base64," part
+        img = Image.open(io.BytesIO(base64.b64decode(img_data)))
+        logger.info("Image decoded successfully")
         
-        # Detect hand
-        hand_bbox = detect_hand(image)
+        # Convert PIL Image to cv2 image
+        img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         
-        if hand_bbox:
-            app.logger.info(f"Hand detected at: {hand_bbox}")
-            x, y, w, h = hand_bbox
+        # Find hands in the image
+        hands, img_cv2 = hd.findHands(img_cv2, draw=False)
+        
+        if hands:
+            logger.info("Hand detected in the image")
+            hand = hands[0]
+            x, y, w, h = hand['bbox']
             
-            # Extract hand region
-            hand_img = image[y:y+h, x:x+w]
+            # Crop the hand region
+            hand_img = img_cv2[y-20:y+h+20, x-20:x+w+20]
             
-            # Preprocess the image
-            processed_img = preprocess_image(hand_img)
+            # Create a white image for drawing hand landmarks
+            white = np.ones((400, 400, 3), dtype=np.uint8) * 255
             
-            # Reshape for model input
-            model_input = np.expand_dims(processed_img, axis=0)
+            # Draw hand landmarks on white image
+            for lm in hand['lmList']:
+                cv2.circle(white, (int(lm[0]-x+20), int(lm[1]-y+20)), 5, (0, 0, 255), cv2.FILLED)
+            
+            # Preprocess the image for prediction
+            white = cv2.resize(white, (28, 28))
+            white = cv2.cvtColor(white, cv2.COLOR_BGR2GRAY)
+            white = white.reshape(1, 28, 28, 1)
+            white = white / 255.0
             
             # Make prediction
-            prediction = model.predict(model_input)
-            predicted_class = np.argmax(prediction)
+            prediction = model.predict(white)
+            predicted_class = classes[np.argmax(prediction)]
+            logger.info(f"Predicted class: {predicted_class}")
             
-            # Convert class to character
-            result = chr(predicted_class + 65)
+            response = {'prediction': predicted_class}
             
-            app.logger.info(f"Prediction: {result}")
+            # If hand tracking is on, include hand landmarks in the response
+            if is_hand_tracking_on:
+                response['handLandmarks'] = hand['lmList']
             
-            return jsonify({
-                'prediction': result,
-                'confidence': float(np.max(prediction)),
-                'bbox': hand_bbox
-            })
-        
-        app.logger.warning("No hand detected in the image")
-        return jsonify({'error': 'No hand detected'}), 400
+            return jsonify(response)
+        else:
+            logger.info("No hand detected in the image")
+            return jsonify({'prediction': 'No hand detected'}), 200  # Changed to 200 status
     except Exception as e:
-        app.logger.error(f"Error in predict: {str(e)}")
-        app.logger.error(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error in prediction: {str(e)}")
+        error_message = "Unable to process the image. Please try again."
+        return jsonify({'error': error_message}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(debug=True)
 
