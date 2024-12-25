@@ -43,7 +43,11 @@ SignWave/
 │   │       └── alphabets/
 │   │           ├── A.png
 │   │           ├── B.png
-│   │           └── ... (other alphabet images)
+│   │           ├── ... (other alphabet images)
+│   │           ├── 0.png
+│   │           ├── 1.png
+│   │           ├── 2.png
+│   │           └── ... (other 0- 10images)
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Camera.tsx

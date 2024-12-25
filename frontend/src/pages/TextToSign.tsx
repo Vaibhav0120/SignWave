@@ -13,6 +13,11 @@ interface TextToSignProps {
   isSignToText: boolean;
 }
 
+interface TranslatedImage {
+  src: string;
+  count: number;
+}
+
 const TextToSign: React.FC<TextToSignProps> = ({
   isDarkMode,
   onSwitchMode,
@@ -21,10 +26,60 @@ const TextToSign: React.FC<TextToSignProps> = ({
   isSignToText,
 }) => {
   const [text, setText] = useState<string>("");
-  const [translatedImages, setTranslatedImages] = useState<string[]>([]);
+  const [translatedImages, setTranslatedImages] = useState<TranslatedImage[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isListening, setIsListening] = useState<boolean>(false);
+
+  const convertToTranslatedImages = (input: string): TranslatedImage[] => {
+    const result: TranslatedImage[] = [];
+    let currentChar = '';
+    let count = 0;
+
+    const processChar = (char: string) => {
+      const upperChar = char.toUpperCase();
+      if ((upperChar >= "A" && upperChar <= "Z") || (upperChar >= "0" && upperChar <= "9")) {
+        return `/images/alphabets/${upperChar}.png`;
+      } else if (char === " ") {
+        return "/images/alphabets/SPACE.png";
+      } else if (char === ",") {
+        return "/images/alphabets/COMMA.png";
+      } else if (char === ".") {
+        return "/images/alphabets/PERIOD.png";
+      } else if (char === "?") {
+        return "/images/alphabets/QUESTION.png";
+      } else if (char === "!") {
+        return "/images/alphabets/EXCLAMATION.png";
+      } else if (char === "\n") {
+        return "/images/alphabets/ENTER.png";
+      } else {
+        return "/images/alphabets/UNKNOWN.png";
+      }
+    };
+
+    for (const char of input) {
+      const processedChar = processChar(char);
+      if (processedChar === currentChar) {
+        count++;
+      } else {
+        if (currentChar) {
+          for (let i = 0; i < count; i++) {
+            result.push({ src: currentChar, count: i + 1 });
+          }
+        }
+        currentChar = processedChar;
+        count = 1;
+      }
+    }
+
+    if (currentChar) {
+      for (let i = 0; i < count; i++) {
+        result.push({ src: currentChar, count: i + 1 });
+      }
+    }
+
+    return result;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,26 +87,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
       setIsTranslating(false);
       return;
     }
-    const images = text
-      .split("")
-      .map((char) => {
-        const upperChar = char.toUpperCase();
-        if (upperChar >= "A" && upperChar <= "Z") {
-          return `/images/alphabets/${upperChar}.png`;
-        } else if (char === " ") {
-          return "/images/alphabets/SPACE.png";
-        } else if (char === ",") {
-          return "/images/alphabets/COMMA.png";
-        } else if (char === ".") {
-          return "/images/alphabets/PERIOD.png";
-        } else if (char === "?") {
-          return "/images/alphabets/QUESTION.png";
-        } else if (char === "!") {
-          return "/images/alphabets/EXCLAMATION.png";
-        } else {
-          return "/images/alphabets/UNKNOWN.png";
-        }
-      });
+    const images = convertToTranslatedImages(text);
     setTranslatedImages(images);
     setCurrentImageIndex(0);
     setIsTranslating(true);
@@ -65,7 +101,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
   };
 
   const handleSpeak = useCallback((e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent form submission
+    e.preventDefault();
     if ('webkitSpeechRecognition' in window) {
       const recognition = new (window as any).webkitSpeechRecognition();
       recognition.continuous = false;
@@ -177,7 +213,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
             </Button>
           </div>
           <div className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-            Current: {text[currentImageIndex] || ""} (
+            Current: {translatedImages[currentImageIndex]?.src.split('/').pop()?.split('.')[0] || ""} (
             {translatedImages.length > 0
               ? `${currentImageIndex + 1}/${translatedImages.length}`
               : "0/0"}
@@ -205,12 +241,19 @@ const TextToSign: React.FC<TextToSignProps> = ({
         }`}
       >
         {isTranslating && translatedImages.length > 0 ? (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center relative">
             <img
-              src={translatedImages[currentImageIndex]}
-              alt={`Sign for ${text[currentImageIndex]}`}
+              src={translatedImages[currentImageIndex].src}
+              alt={`Sign for ${translatedImages[currentImageIndex].src.split('/').pop()?.split('.')[0]}`}
               className="w-full h-full object-contain"
             />
+            {translatedImages[currentImageIndex].count > 1 && (
+              <div className="absolute bottom-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center border-2 border-black">
+                <span className="text-black font-bold text-sm">
+                  {translatedImages[currentImageIndex].count}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <p
