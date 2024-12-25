@@ -6,8 +6,8 @@ import base64
 import io
 from PIL import Image
 import tensorflow as tf
-from cvzone.HandTrackingModule import HandDetector
 import logging
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -16,16 +16,19 @@ CORS(app)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load your trained model here
-model = tf.keras.models.load_model('cnn8grps_rad1_model.h5')
-logger.info("Model loaded successfully")
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Initialize HandDetector
-hd = HandDetector(maxHands=1, detectionCon=0.8)
-logger.info("HandDetector initialized")
+# Construct the full path to the model file
+model_path = os.path.join(current_dir, 'sign_language_model.h5')
 
-# Define your classes
-classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+# Load your trained model
+model = tf.keras.models.load_model(model_path)
+logger.info(f"Model loaded successfully from {model_path}")
+
+# Define your classes (assuming 36 classes as per the training data)
+classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
+           '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  # Adjust if your classes are different
 
 @app.route('/api/handshake', methods=['GET'])
 def handshake():
@@ -36,63 +39,51 @@ def handshake():
 def predict():
     logger.info("Received prediction request")
     try:
-        # Get the image and hand tracking flag from the POST request
+        # Get the image from the POST request
         data = request.json
         img_data = data['image']
-        is_hand_tracking_on = data['isHandTrackingOn']
-        logger.info(f"Hand tracking is {'on' if is_hand_tracking_on else 'off'}")
         
         # Decode the base64 image
         img_data = img_data.split(',')[1]  # Remove the "data:image/jpeg;base64," part
         img = Image.open(io.BytesIO(base64.b64decode(img_data)))
         logger.info("Image decoded successfully")
         
-        # Convert PIL Image to cv2 image
-        img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        # Preprocess the image
+        preprocessed_img = preprocess_image(img)
         
-        # Find hands in the image
-        hands, img_cv2 = hd.findHands(img_cv2, draw=False)
+        # Make prediction
+        prediction = model.predict(preprocessed_img)
+        predicted_class = classes[np.argmax(prediction)]
+        confidence = float(np.max(prediction))
+        logger.info(f"Predicted class: {predicted_class}, Confidence: {confidence:.2f}")
         
-        if hands:
-            logger.info("Hand detected in the image")
-            hand = hands[0]
-            x, y, w, h = hand['bbox']
-            
-            # Crop the hand region
-            hand_img = img_cv2[y-20:y+h+20, x-20:x+w+20]
-            
-            # Create a white image for drawing hand landmarks
-            white = np.ones((400, 400, 3), dtype=np.uint8) * 255
-            
-            # Draw hand landmarks on white image
-            for lm in hand['lmList']:
-                cv2.circle(white, (int(lm[0]-x+20), int(lm[1]-y+20)), 5, (0, 0, 255), cv2.FILLED)
-            
-            # Preprocess the image for prediction
-            white = cv2.resize(white, (28, 28))
-            white = cv2.cvtColor(white, cv2.COLOR_BGR2GRAY)
-            white = white.reshape(1, 28, 28, 1)
-            white = white / 255.0
-            
-            # Make prediction
-            prediction = model.predict(white)
-            predicted_class = classes[np.argmax(prediction)]
-            logger.info(f"Predicted class: {predicted_class}")
-            
-            response = {'prediction': predicted_class}
-            
-            # If hand tracking is on, include hand landmarks in the response
-            if is_hand_tracking_on:
-                response['handLandmarks'] = hand['lmList']
-            
-            return jsonify(response)
-        else:
-            logger.info("No hand detected in the image")
-            return jsonify({'prediction': 'No hand detected'}), 200  # Changed to 200 status
+        return jsonify({
+            'prediction': predicted_class,
+            'confidence': confidence,
+            'handDetected': True  # Assuming hand detection is handled by the model
+        })
     except Exception as e:
         logger.error(f"Error in prediction: {str(e)}")
-        error_message = "Unable to process the image. Please try again."
-        return jsonify({'error': error_message}), 400
+        return jsonify({'error': f"Unable to process the image. Error: {str(e)}"}), 400
+
+def preprocess_image(img):
+    # Convert PIL Image to numpy array
+    img_array = np.array(img)
+    
+    # Resize to 64x64 (matching the model's input size)
+    resized = cv2.resize(img_array, (64, 64), interpolation=cv2.INTER_AREA)
+    
+    # Ensure the image has 3 channels (RGB)
+    if len(resized.shape) == 2:
+        resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+    elif resized.shape[2] == 4:
+        resized = cv2.cvtColor(resized, cv2.COLOR_RGBA2RGB)
+    
+    # Normalize
+    normalized = resized / 255.0
+    
+    # Reshape for the model (add batch dimension)
+    return np.expand_dims(normalized, axis=0)
 
 if __name__ == '__main__':
     app.run(debug=True)
