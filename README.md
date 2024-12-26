@@ -32,54 +32,55 @@ SignWave consists of two main parts:
 
 ```bash
 SignWave/
-├── frontend/
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── favicon.ico
-│   │   ├── manifest.json
-│   │   ├── robots.txt
-│   │   └── images/
-│   │       ├── Sign_Language.png
-│   │       └── alphabets/
-│   │           ├── A.png
-│   │           ├── B.png
-│   │           ├── ... (other alphabet images)
-│   │           ├── 0.png
-│   │           ├── 1.png
-│   │           ├── 2.png
-│   │           └── ... (other 0- 10images)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Camera.tsx
-│   │   │   ├── CameraOffSign.tsx
-│   │   │   ├── CursorGradient.tsx
-│   │   │   ├── Navbar.tsx
-│   │   │   ├── ReverseButton.tsx
-│   │   │   ├── SignAnimation.tsx
-│   │   │   ├── Switch.tsx
-│   │   │   ├── TextToSpeech.tsx
-│   │   │   ├── TranslationLayout.tsx
-│   │   │   └── ui/
-│   │   │       ├── button.tsx
-│   │   │       └── spinner.tsx
-│   │   ├── images/
-│   │   │   └── Light_Theme.jpg
-│   │   ├── pages/
-│   │   │   ├── Home.tsx
-│   │   │   ├── SignToText.tsx
-│   │   │   └── TextToSign.tsx
-│   │   ├── utils/
-│   │   │   └── api.ts
-│   │   ├── App.tsx
-│   │   ├── index.tsx
-│   │   └── index.css
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── tailwind.config.js
-├── backend/
-│   ├── app.py
-│   └── cnn8grps_rad1_model.h5
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   ├── manifest.json
+│   ├── robots.txt
+│   ├── model/
+│   │   ├── model.json
+│   │   └── weights.bin (or other weight files)
+│   └── images/
+│       ├── Sign_Language.png
+│       └── alphabets/
+│           ├── A.png
+│           ├── B.png
+│           ├── ... (other alphabet images)
+│           ├── 0.png
+│           ├── 1.png
+│           ├── 2.png
+│           └── ... (other 0-10 images)
+├── src/
+│   ├── components/
+│   │   ├── Alert.tsx
+│   │   ├── Camera.tsx
+│   │   ├── CameraOffSign.tsx
+│   │   ├── CursorGradient.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── ReverseButton.tsx
+│   │   ├── SignAnimation.tsx
+│   │   ├── Switch.tsx
+│   │   ├── TextToSpeech.tsx
+│   │   ├── TranslationLayout.tsx
+│   │   └── ui/
+│   │       ├── button.tsx
+│   │       └── spinner.tsx
+│   ├── images/
+│   │   └── Light_Theme.jpg
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   ├── SignToText.tsx
+│   │   └── TextToSign.tsx
+│   ├── utils/
+│   │   ├── api.ts
+│   │   └── utilities.ts
+│   ├── App.tsx
+│   ├── index.tsx
+│   └── index.css
 ├── .gitignore
+├── package.json
+├── tsconfig.json
+├── tailwind.config.js
 └── README.md
 
 ```
