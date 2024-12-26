@@ -29,7 +29,7 @@ class Application:
     def __init__(self):
         self.vs = cv2.VideoCapture(0)
         self.current_image = None
-        self.model = load_model('sign_model.h5')
+        self.model = load_model('backend/sign_model.h5')
         self.speak_engine=pyttsx3.init()
         self.speak_engine.setProperty("rate",100)
         voices=self.speak_engine.getProperty("voices")
