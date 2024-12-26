@@ -5,7 +5,6 @@ import TranslationLayout from "../components/TranslationLayout";
 import Alert from "../components/Alert";
 import TextToSpeech from "../components/TextToSpeech";
 import { predictSign } from "../utils/api";
-import { drawRect } from "../utils/utilities";
 
 interface SignToTextProps {
   isDarkMode: boolean;
@@ -33,34 +32,86 @@ const SignToText: React.FC<SignToTextProps> = ({
   const [alerts, setAlerts] = useState<AlertInfo[]>([]);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translatedText, setTranslatedText] = useState<string>("");
+  const [currentPrediction, setCurrentPrediction] = useState<string>("");
+  const [detections, setDetections] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const predictionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const addAlert = useCallback((alert: AlertInfo) => {
-    setAlerts((prevAlerts) => [...prevAlerts, alert]);
+    setAlerts(prevAlerts => [...prevAlerts, alert]);
     setTimeout(() => {
-      setAlerts((prevAlerts) => prevAlerts.filter((a) => a !== alert));
+      setAlerts(prevAlerts => prevAlerts.filter(a => a !== alert));
     }, 5000);
   }, []);
 
-  useEffect(() => {
-    if (modelLoaded) {
-      addAlert({
-        message: "Model loaded",
-        details: "Translation service is ready.",
-        type: "success",
+  const captureAndPredictSign = useCallback(async () => {
+    if (canvasRef.current && videoRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        // Flip the image horizontally
+        ctx.translate(canvasRef.current.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transformation
+
+        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+        try {
+          const result = await predictSign(imageData);
+          setDetections(result);
+          if (result.prediction && result.prediction !== currentPrediction) {
+            setCurrentPrediction(result.prediction);
+            setTranslatedText((prevText) => prevText + " " + result.prediction);
+          }
+          drawDetections(ctx, result);
+        } catch (error: any) {
+          console.error("Translation error:", error.message);
+        }
+      }
+    }
+  }, [currentPrediction]);
+
+  const drawDetections = useCallback((ctx: CanvasRenderingContext2D, detections: any) => {
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
+    ctx.clearRect(0, 0, width, height);
+
+    if (detections && detections.boxes && detections.scores && detections.classes) {
+      detections.boxes.forEach((box: number[], i: number) => {
+        if (detections.scores[i] > 0.5) {
+          const [y, x, boxHeight, boxWidth] = box;
+          ctx.strokeStyle = "green";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x * width, y * height, boxWidth * width, boxHeight * height);
+
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "green";
+          ctx.fillText(
+            `${detections.classes[i]}: ${Math.round(detections.scores[i] * 100)}%`,
+            x * width,
+            y * height - 5
+          );
+        }
       });
     }
-  }, [modelLoaded, addAlert]);
+  }, []);
+
+  const startRealTimeTranslation = useCallback(() => {
+    const runPrediction = () => {
+      captureAndPredictSign();
+      predictionIntervalRef.current = setTimeout(runPrediction, 200);
+    };
+    runPrediction();
+  }, [captureAndPredictSign]);
 
   const startCamera = useCallback(async () => {
     if (!modelLoaded) {
       addAlert({
         message: "Model not loaded",
-        details:
-          "Please wait for the model to load before starting translation.",
-        type: "warning",
+        details: "Please wait for the model to load before starting translation.",
+        type: "warning"
       });
       return;
     }
@@ -82,18 +133,18 @@ const SignToText: React.FC<SignToTextProps> = ({
       setIsTranslating(true);
       addAlert({
         message: "Camera started",
-        details: "Press spacebar to capture and translate signs.",
-        type: "info",
+        details: "Real-time translation has begun.",
+        type: "info"
       });
+      startRealTimeTranslation();
     } catch (err) {
       addAlert({
         message: "Camera access failed",
-        details:
-          "Unable to access your camera. Please check your camera permissions and try again.",
-        type: "error",
+        details: "Unable to access your camera. Please check your camera permissions and try again.",
+        type: "error"
       });
     }
-  }, [modelLoaded, addAlert]);
+  }, [modelLoaded, addAlert, startRealTimeTranslation]);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -103,84 +154,15 @@ const SignToText: React.FC<SignToTextProps> = ({
       videoRef.current.srcObject = null;
     }
     setIsTranslating(false);
+    if (predictionIntervalRef.current) {
+      clearTimeout(predictionIntervalRef.current);
+    }
     addAlert({
       message: "Camera stopped",
       details: "The camera has been deactivated.",
-      type: "info",
+      type: "info"
     });
   }, [addAlert]);
-
-  const captureAndPredictSign = useCallback(async () => {
-    if (canvasRef.current && videoRef.current) {
-      const ctx = canvasRef.current.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(
-          videoRef.current,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        ctx.scale(-1, 1);
-        ctx.drawImage(canvasRef.current, -canvasRef.current.width, 0);
-        ctx.scale(-1, 1);
-
-        const imageData = ctx.getImageData(
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        try {
-          const { prediction, handDetected } = await predictSign(imageData);
-          if (handDetected) {
-            setTranslatedText((prevText) => prevText + " " + prediction);
-            addAlert({
-              message: "Sign translated",
-              details: `Predicted sign: ${prediction}`,
-              type: "success",
-            });
-            drawRect(ctx, prediction);
-          } else {
-            addAlert({
-              message: "No hand detected",
-              details: "Please ensure your hand is visible in the frame.",
-              type: "warning",
-            });
-          }
-        } catch (error: any) {
-          addAlert({
-            message: "Translation error",
-            details: error.message || "An error occurred during translation.",
-            type: "error",
-          });
-        }
-      }
-    }
-  }, [addAlert]);
-
-  const handleSpacebar = useCallback(async () => {
-    if (isTranslating) {
-      await captureAndPredictSign();
-    }
-  }, [isTranslating, captureAndPredictSign]);
-
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.code === "Space") {
-        event.preventDefault();
-        handleSpacebar();
-      }
-    };
-
-    if (isTranslating) {
-      window.addEventListener("keydown", handleKeyPress);
-    }
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, [isTranslating, handleSpacebar]);
 
   const toggleTranslation = useCallback(() => {
     if (isTranslating) {
@@ -191,12 +173,31 @@ const SignToText: React.FC<SignToTextProps> = ({
   }, [isTranslating, startCamera, stopCamera]);
 
   useEffect(() => {
+    if (modelLoaded) {
+      addAlert({
+        message: "Model loaded",
+        details: "Translation service is ready.",
+        type: "success"
+      });
+    }
+  }, [modelLoaded, addAlert]);
+
+  useEffect(() => {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      if (predictionIntervalRef.current) {
+        clearTimeout(predictionIntervalRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (detections) {
+      console.log("Detections:", detections);
+    }
+  }, [detections]);
 
   const leftContent = (
     <div className="h-full flex flex-col">
@@ -209,7 +210,7 @@ const SignToText: React.FC<SignToTextProps> = ({
         />
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full object-cover hidden"
+          className="absolute top-0 left-0 w-full h-full object-cover"
           width={1280}
           height={720}
         />
@@ -234,10 +235,8 @@ const SignToText: React.FC<SignToTextProps> = ({
           {isTranslating ? "Stop Translating" : "Start Translating"}
         </Button>
         {isTranslating && (
-          <p
-            className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}
-          >
-            Press Spacebar to capture and translate
+          <p className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
+            Real-time translation active
           </p>
         )}
       </div>
@@ -298,9 +297,7 @@ const SignToText: React.FC<SignToTextProps> = ({
           key={index}
           message={alert.message}
           details={alert.details}
-          onClose={() =>
-            setAlerts((alerts) => alerts.filter((a) => a !== alert))
-          }
+          onClose={() => setAlerts(alerts => alerts.filter(a => a !== alert))}
           isDarkMode={isDarkMode}
           type={alert.type}
         />
@@ -319,3 +316,4 @@ const SignToText: React.FC<SignToTextProps> = ({
 };
 
 export default SignToText;
+
