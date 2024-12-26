@@ -7,7 +7,7 @@ interface AlertProps {
   details?: string;
   onClose: () => void;
   isDarkMode: boolean;
-  type: 'success' | 'warning' | 'error';
+  type: 'success' | 'warning' | 'error' | 'info';
 }
 
 const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode, type }) => {
@@ -23,7 +23,8 @@ const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode, ty
     if (type === 'success') return isDarkMode ? 'bg-green-800' : 'bg-green-500';
     if (type === 'warning') return isDarkMode ? 'bg-yellow-800' : 'bg-yellow-500';
     if (type === 'error') return isDarkMode ? 'bg-red-800' : 'bg-red-500';
-    return isDarkMode ? 'bg-gray-800' : 'bg-blue-500';
+    if (type === 'info') return isDarkMode ? 'bg-blue-800' : 'bg-blue-500';
+    return isDarkMode ? 'bg-gray-800' : 'bg-gray-500';
   };
 
   return (
@@ -52,3 +53,4 @@ const Alert: React.FC<AlertProps> = ({ message, details, onClose, isDarkMode, ty
 };
 
 export default Alert;
+
