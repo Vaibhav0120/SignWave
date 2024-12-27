@@ -1,53 +1,100 @@
-import subprocess
-import os
-from flask import Flask, jsonify # type: ignore
-from flask_cors import CORS # type: ignore
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import cv2
+import numpy as np
+from keras.models import load_model
+import base64
+import traceback
+from cvzone.HandTrackingModule import HandDetector
 import logging
-import signal
 
 app = Flask(__name__)
 CORS(app)
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-# Global variable to store the subprocess
-global_process = None
+# Load the pre-trained model
+model = load_model('cnn8grps_rad1_model.h5')
 
-@app.route('/start-translation', methods=['POST'])
-def start_translation():
-    global global_process
-    logger.info("Received request to start translation")
+# Initialize HandDetector
+hd = HandDetector(maxHands=1)
+
+def preprocess_image(image):
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Apply Gaussian blur
+    blur = cv2.GaussianBlur(gray, (5, 5), 2)
+    
+    # Apply adaptive thresholding
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    
+    # Resize the image to match the input size of the model
+    resized = cv2.resize(thresh, (400, 400))
+    
+    # Convert to RGB (3 channels)
+    rgb = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+    
+    return rgb
+
+def detect_hand(image):
+    hands, _ = hd.findHands(image, draw=False, flipType=False)
+    if hands:
+        return hands[0]['bbox']
+    return None
+
+@app.route('/api/health-check', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'ok'}), 200
+
+@app.route('/api/predict', methods=['POST'])
+def predict():
     try:
-        if global_process is None or global_process.poll() is not None:
-            # Get the directory of the current script
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            # Construct the path to final_pred.py
-            final_pred_path = os.path.join(current_dir, 'final_pred.py')
+        app.logger.info("Received prediction request")
+        data = request.json
+        image_data = data['image'].split(',')[1]
+        image = cv2.imdecode(np.frombuffer(base64.b64decode(image_data), np.uint8), cv2.IMREAD_COLOR)
+        
+        app.logger.info(f"Received image shape: {image.shape}")
+        
+        # Detect hand
+        hand_bbox = detect_hand(image)
+        
+        if hand_bbox:
+            app.logger.info(f"Hand detected at: {hand_bbox}")
+            x, y, w, h = hand_bbox
             
-            # Start the Tkinter application as a separate process
-            global_process = subprocess.Popen(['python', final_pred_path])
+            # Extract hand region
+            hand_img = image[y:y+h, x:x+w]
             
-            return jsonify({'status': 'success', 'message': 'Translation started successfully'}), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Translation is already running'}), 400
+            # Preprocess the image
+            processed_img = preprocess_image(hand_img)
+            
+            # Reshape for model input
+            model_input = np.expand_dims(processed_img, axis=0)
+            
+            # Make prediction
+            prediction = model.predict(model_input)
+            predicted_class = np.argmax(prediction)
+            
+            # Convert class to character
+            result = chr(predicted_class + 65)
+            
+            app.logger.info(f"Prediction: {result}")
+            
+            return jsonify({
+                'prediction': result,
+                'confidence': float(np.max(prediction)),
+                'bbox': hand_bbox
+            })
+        
+        app.logger.warning("No hand detected in the image")
+        return jsonify({'error': 'No hand detected'}), 400
     except Exception as e:
-        logger.exception(f"Exception occurred: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/stop-translation', methods=['POST'])
-def stop_translation():
-    global global_process
-    if global_process and global_process.poll() is None:
-        # Send a termination signal to the process
-        os.kill(global_process.pid, signal.SIGTERM)
-        global_process = None
-        return jsonify({'status': 'success', 'message': 'Translation stopped successfully'}), 200
-    else:
-        return jsonify({'status': 'error', 'message': 'No active translation to stop'}), 400
+        app.logger.error(f"Error in predict: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    logger.info("Starting Flask server")
-    app.run(debug=True)
-
+    app.run(debug=True, threaded=True)
