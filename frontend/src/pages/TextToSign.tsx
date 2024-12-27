@@ -1,11 +1,11 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Button } from "../components/ui/button";
-import CameraOffSign from "../components/CameraOffSign";
-import TranslationLayout from "../components/TranslationLayout";
-import Alert from "../components/Alert";
-import TextToSpeech from "../components/TextToSpeech";
+"use client"
 
-interface SignToTextProps {
+import React, { useState, useEffect, useCallback } from "react";
+import { Button } from "../components/ui/button";
+import TranslationLayout from "../components/TranslationLayout";
+import { Mic } from 'lucide-react';
+
+interface TextToSignProps {
   isDarkMode: boolean;
   onSwitchMode: () => void;
   isTransitioning: boolean;
@@ -13,256 +13,214 @@ interface SignToTextProps {
   isSignToText: boolean;
 }
 
-interface AlertInfo {
-  message: string;
-  details: string;
-  type: "success" | "error" | "warning" | "info";
+interface TranslatedImage {
+  src: string;
+  count: number;
 }
 
-const SignToText: React.FC<SignToTextProps> = ({
+const TextToSign: React.FC<TextToSignProps> = ({
   isDarkMode,
   onSwitchMode,
   isTransitioning,
   animationDirection,
   isSignToText,
 }) => {
-  const [alerts, setAlerts] = useState<AlertInfo[]>([]);
+  const [text, setText] = useState<string>("");
+  const [translatedImages, setTranslatedImages] = useState<TranslatedImage[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
-  const [translatedText, setTranslatedText] = useState<string>("");
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentPrediction, setCurrentPrediction] = useState<string>("");
-  const [confidence, setConfidence] = useState<number>(0);
-  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [isListening, setIsListening] = useState<boolean>(false);
 
-  const addAlert = useCallback((alert: AlertInfo) => {
-    setAlerts(prevAlerts => [...prevAlerts, alert]);
-    setTimeout(() => {
-      setAlerts(prevAlerts => prevAlerts.filter(a => a !== alert));
-    }, 5000);
-  }, []);
+  const convertToTranslatedImages = (input: string): TranslatedImage[] => {
+    const result: TranslatedImage[] = [];
+    let currentChar = '';
+    let count = 0;
 
-  const startTranslation = useCallback(async () => {
-    if (!isBackendConnected) {
-      addAlert({
-        message: "Backend Error",
-        details: "Cannot start translation. Backend is not connected.",
-        type: "error"
-      });
-      return;
-    }
-    setIsTranslating(true);
-    setIsCameraActive(true);
-    addAlert({
-      message: "Translation started",
-      details: "Camera is now on.",
-      type: "info"
-    });
-  }, [addAlert, isBackendConnected]);
-
-  const stopTranslation = useCallback(() => {
-    setIsTranslating(false);
-    setIsCameraActive(false);
-    addAlert({
-      message: "Translation stopped",
-      details: "The translation process has been stopped.",
-      type: "info"
-    });
-  }, [addAlert]);
-
-  const toggleTranslation = useCallback(() => {
-    if (isTranslating) {
-      stopTranslation();
-    } else {
-      startTranslation();
-    }
-  }, [isTranslating, startTranslation, stopTranslation]);
-
-  const drawHandTracking = useCallback((bbox: number[], prediction: string) => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (canvas && video) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Draw bounding box
-        ctx.strokeStyle = 'green';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bbox[0], bbox[1], bbox[2], bbox[3]);
-
-        // Draw prediction text
-        ctx.fillStyle = 'green';
-        ctx.font = '24px Arial';
-        ctx.fillText(prediction, bbox[0], bbox[1] - 10);
-      }
-    }
-  }, []);
-
-  const sendImageToBackend = useCallback(async (imageData: string) => {
-    if (!isBackendConnected) {
-      addAlert({
-        message: "Backend Error",
-        details: "Cannot send image. Backend is not connected.",
-        type: "error"
-      });
-      return;
-    }
-    try {
-      const response = await fetch("http://localhost:5000/api/predict", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ image: imageData }),
-      });
-      if (!response.ok) {
-        if (response.status === 400) {
-          console.log("No hand detected");
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.error) {
-        addAlert({
-          message: "Prediction Error",
-          details: data.error,
-          type: "error"
-        });
+    const processChar = (char: string) => {
+      const upperChar = char.toUpperCase();
+      if ((upperChar >= "A" && upperChar <= "Z") || (upperChar >= "0" && upperChar <= "9")) {
+        return `/images/alphabets/${upperChar}.png`;
+      } else if (char === " ") {
+        return "/images/alphabets/SPACE.png";
+      } else if (char === ",") {
+        return "/images/alphabets/COMMA.png";
+      } else if (char === ".") {
+        return "/images/alphabets/PERIOD.png";
+      } else if (char === "?") {
+        return "/images/alphabets/QUESTION.png";
+      } else if (char === "!") {
+        return "/images/alphabets/EXCLAMATION.png";
+      } else if (char === "\n") {
+        return "/images/alphabets/ENTER.png";
       } else {
-        setCurrentPrediction(data.prediction);
-        setConfidence(data.confidence);
-        drawHandTracking(data.bbox, data.prediction);
-        setTranslatedText(prev => prev + data.prediction);
-      }
-    } catch (error) {
-      console.error("Error sending image to backend:", error);
-      addAlert({
-        message: "Backend Error",
-        details: "Failed to get prediction from the backend.",
-        type: "error"
-      });
-    }
-  }, [isBackendConnected, addAlert, drawHandTracking]);
-
-  const captureFrame = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = canvas.toDataURL("image/jpeg");
-        sendImageToBackend(imageData);
-      }
-    }
-  }, [sendImageToBackend]);
-
-  useEffect(() => {
-    const checkBackendConnection = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/health-check");
-        setIsBackendConnected(response.ok);
-        if (!response.ok) {
-          throw new Error("Backend is not responding");
-        }
-      } catch (error) {
-        setIsBackendConnected(false);
-        addAlert({
-          message: "Backend Connection Error",
-          details: "Cannot connect to backend. Please ensure the backend server is running.",
-          type: "error"
-        });
+        return "/images/alphabets/UNKNOWN.png";
       }
     };
 
-    checkBackendConnection();
-    const intervalId = setInterval(checkBackendConnection, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [addAlert]);
-
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-
-    const startCamera = async () => {
-      if (isCameraActive) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-          });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+    for (const char of input) {
+      const processedChar = processChar(char);
+      if (processedChar === currentChar) {
+        count++;
+      } else {
+        if (currentChar) {
+          for (let i = 0; i < count; i++) {
+            result.push({ src: currentChar, count: i + 1 });
           }
-        } catch (err) {
-          console.error("Error accessing camera:", err);
-          addAlert({
-            message: "Camera Error",
-            details: "Unable to access the camera. Please ensure you have given permission.",
-            type: "error"
-          });
         }
+        currentChar = processedChar;
+        count = 1;
       }
-    };
+    }
 
-    startCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+    if (currentChar) {
+      for (let i = 0; i < count; i++) {
+        result.push({ src: currentChar, count: i + 1 });
       }
-    };
-  }, [isCameraActive, addAlert]);
+    }
+
+    return result;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isTranslating) {
+      setIsTranslating(false);
+      return;
+    }
+    const images = convertToTranslatedImages(text);
+    setTranslatedImages(images);
+    setCurrentImageIndex(0);
+    setIsTranslating(true);
+  };
+
+  const handleClear = () => {
+    setText("");
+    setTranslatedImages([]);
+    setCurrentImageIndex(0);
+    setIsTranslating(false);
+  };
+
+  const handleSpeak = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new (window as any).webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setText((prevText) => {
+          const newText = prevText + transcript;
+          return newText.charAt(0) === ' ' ? newText.slice(1) : newText;
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } else {
+      alert('Speech recognition is not supported in your browser.');
+    }
+  }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTranslating && isBackendConnected && isCameraActive) {
-      interval = setInterval(captureFrame, 500); // Capture every 500ms
+    if (isTranslating && translatedImages.length > 0) {
+      const intervalId = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => {
+          if (prevIndex < translatedImages.length - 1) {
+            return prevIndex + 1;
+          } else {
+            setIsTranslating(false);
+            return prevIndex;
+          }
+        });
+      }, 750);
+
+      return () => clearInterval(intervalId);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTranslating, isBackendConnected, isCameraActive, captureFrame, addAlert]);
+  }, [isTranslating, translatedImages]);
 
   const leftContent = (
     <div className="h-full flex flex-col">
-      <div className="relative h-[calc(100%-3rem)] mb-4 bg-black rounded-lg overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className={`w-full h-full object-cover ${isCameraActive ? '' : 'hidden'}`}
-        />
-        <canvas
-          ref={canvasRef}
-          className={`absolute top-0 left-0 w-full h-full ${isCameraActive ? '' : 'hidden'}`}
-          width={640}
-          height={480}
-        />
-        {!isCameraActive && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CameraOffSign isOn={false} />
+      <form onSubmit={handleSubmit} className="flex-grow flex flex-col">
+        <div className="flex-grow mb-4">
+          <label
+            htmlFor="text"
+            className={`block text-sm font-medium ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            } mb-2`}
+          >
+            Enter text to translate:
+          </label>
+          <textarea
+            id="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className={`w-full h-[calc(100%-5rem)] px-4 py-3 ${
+              isDarkMode
+                ? "bg-gray-700 text-white border-gray-600"
+                : "bg-white text-gray-900 border-gray-300"
+            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out border-2`}
+            required
+            placeholder="Type your text here..."
+          />
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleClear}
+              variant="outline"
+              size="sm"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              Clear
+            </Button>
+            <Button
+              onClick={handleSpeak}
+              variant="outline"
+              size="sm"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+              } ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
+            >
+              <Mic className={`w-4 h-4 ${isListening ? 'animate-pulse' : ''}`} />
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                isTranslating
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : isDarkMode
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-white`}
+            >
+              {isTranslating ? "STOP" : "Translate"}
+            </Button>
           </div>
-        )}
-      </div>
-      <div className="flex justify-between items-center">
-        <Button
-          variant="default"
-          size="sm"
-          className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-            isDarkMode
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-blue-500 hover:bg-blue-600"
-          } text-white`}
-          onClick={toggleTranslation}
-          disabled={!isBackendConnected}
-        >
-          {isTranslating ? "Stop Translating" : "Start Translating"}
-        </Button>
-      </div>
+          <div className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
+            Current: {translatedImages[currentImageIndex]?.src.split('/').pop()?.split('.')[0] || ""} (
+            {translatedImages.length > 0
+              ? `${currentImageIndex + 1}/${translatedImages.length}`
+              : "0/0"}
+            )
+          </div>
+        </div>
+      </form>
     </div>
   );
 
@@ -273,38 +231,41 @@ const SignToText: React.FC<SignToTextProps> = ({
           isDarkMode ? "text-white" : "text-gray-900"
         }`}
       >
-        Translated Text:
+        Sign Language Translation:
       </h2>
       <div
         className={`${
           isDarkMode ? "bg-gray-800" : "bg-white"
-        } p-4 rounded-lg h-[calc(100%-5rem)] mb-2 shadow-inner overflow-auto border-2 ${
+        } p-4 rounded-lg h-[calc(100%-5rem)] shadow-inner overflow-hidden flex items-center justify-center border-2 ${
           isDarkMode ? "border-gray-700" : "border-gray-300"
         }`}
       >
-        <p className={`text-lg ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-          {translatedText || "Start translating to see the result"}
-        </p>
-      </div>
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-              isDarkMode
-                ? "border-gray-600 hover:bg-gray-700"
-                : "border-gray-300 hover:bg-gray-100"
+        {isTranslating && translatedImages.length > 0 ? (
+          <div className="w-full h-full flex items-center justify-center relative">
+            <img
+              src={translatedImages[currentImageIndex].src}
+              alt={`Sign for ${translatedImages[currentImageIndex].src.split('/').pop()?.split('.')[0]}`}
+              className="w-full h-full object-contain"
+            />
+            {translatedImages[currentImageIndex].count > 1 && (
+              <div className="absolute bottom-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center border-2 border-black">
+                <span className="text-black font-bold text-sm">
+                  {translatedImages[currentImageIndex].count}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p
+            className={`text-center ${
+              isDarkMode ? "text-white" : "text-gray-900"
             }`}
-            onClick={() => setTranslatedText("")}
           >
-            Clear
-          </Button>
-          <TextToSpeech text={translatedText} isDarkMode={isDarkMode} />
-        </div>
-        <div className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-          Current: {currentPrediction} ({(confidence * 100).toFixed(2)}%)
-        </div>
+            {translatedImages.length > 0
+              ? "Translation complete"
+              : "Enter text and click Translate to see sign language images"}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -316,18 +277,8 @@ const SignToText: React.FC<SignToTextProps> = ({
           isDarkMode ? "text-white" : "text-gray-900"
         } text-center`}
       >
-        Sign to Text
+        Text to Sign
       </h1>
-      {alerts.map((alert, index) => (
-        <Alert
-          key={index}
-          message={alert.message}
-          details={alert.details}
-          onClose={() => setAlerts(alerts => alerts.filter(a => a !== alert))}
-          isDarkMode={isDarkMode}
-          type={alert.type}
-        />
-      ))}
       <TranslationLayout
         isDarkMode={isDarkMode}
         onSwitchMode={onSwitchMode}
@@ -341,5 +292,4 @@ const SignToText: React.FC<SignToTextProps> = ({
   );
 };
 
-export default SignToText;
-
+export default TextToSign;
