@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import TranslationLayout from "../components/TranslationLayout";
-import { Mic } from 'lucide-react';
+import { Mic } from "lucide-react";
 
 interface TextToSignProps {
   isDarkMode: boolean;
@@ -26,19 +26,107 @@ const TextToSign: React.FC<TextToSignProps> = ({
   isSignToText,
 }) => {
   const [text, setText] = useState<string>("");
-  const [translatedImages, setTranslatedImages] = useState<TranslatedImage[]>([]);
+  const [translatedImages, setTranslatedImages] = useState<TranslatedImage[]>(
+    []
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isListening, setIsListening] = useState<boolean>(false);
 
   const convertToTranslatedImages = (input: string): TranslatedImage[] => {
     const result: TranslatedImage[] = [];
-    let currentChar = '';
-    let count = 0;
+    const words = input.toLowerCase().split(/\s+/);
+
+    const specialWords: { [key: string]: string } = {
+      "you're welcome": "/images/special/youre_welcome.png",
+      please: "/images/special/please.png",
+      thanks: "/images/special/thank_you.png",
+      no: "/images/special/no.png",
+      yes: "/images/special/yes.png",
+      hello: "/images/special/hello.png",
+      sorry: "/images/special/sorry.png",
+      help: "/images/special/help.png",
+      more: "/images/special/more.png",
+      goodbye: "/images/special/goodbye.png",
+      "excuse me": "/images/special/excuse_me.png",
+      sign: "/images/special/sign.png",
+      fingerspell: "/images/special/fingerspell.png",
+      okay: "/images/special/okay.png",
+      time: "/images/special/time.png",
+
+      share: "/images/special/share.png",
+      can: "/images/special/can.png",
+      use: "/images/special/use.png",
+      tell: "/images/special/tell.png",
+      try: "/images/special/try.png",
+      find: "/images/special/find.png",
+      say: "/images/special/say.png",
+      need: "/images/special/need.png",
+      for: "/images/special/for.png",
+      ask: "/images/special/ask.png",
+      see: "/images/special/see.png",
+      want: "/images/special/want.png",
+      meet: "/images/special/meet.png",
+      nice: "/images/special/nice.png",
+      will: "/images/special/will.png",
+
+      asl: "/images/special/asl.png",
+      deaf: "/images/special/deaf.png",
+      love: "/images/special/love.png",
+      "i love you": "/images/special/i_love_you.png",
+      mother: "/images/special/mother.png",
+      father: "/images/special/father.png",
+      baby: "/images/special/baby.png",
+      friend: "/images/special/friend.png",
+      school: "/images/special/school.png",
+      bathroom: "/images/special/bathroom.png",
+
+      where: "/images/special/where.png",
+      why: "/images/special/why.png",
+      which: "/images/special/which.png",
+      but: "/images/special/but.png",
+      different: "/images/special/different.png",
+      same: "/images/special/same.png",
+      again: "/images/special/again.png",
+      also: "/images/special/also.png",
+      now: "/images/special/now.png",
+      later: "/images/special/later.png",
+      not: "/images/special/not.png",
+      who: "/images/special/who.png",
+      when: "/images/special/when.png",
+      how: "/images/special/how.png",
+      what: "/images/special/what.png",
+
+      hers: "/images/special/its.png",
+      his: "/images/special/its.png",
+      its: "/images/special/its.png",
+      your: "/images/special/your.png",
+      yours: "/images/special/your.png",
+      mine: "/images/special/mine.png",
+      he: "/images/special/he.png",
+      she: "/images/special/she.png",
+      it: "/images/special/it.png",
+      you: "/images/special/you.png",
+      me: "/images/special/me.png",
+      with: "/images/special/with.png",
+      we: "/images/special/us.png",
+      us: "/images/special/us.png",
+      our: "/images/special/our.png",
+      ours: "/images/special/our.png",
+      this: "/images/special/this.png",
+      that: "/images/special/that.png",
+      these: "/images/special/these.png",
+      those: "/images/special/those.png",
+      they: "/images/special/they.png",
+      theirs: "/images/special/that.png",
+    };
 
     const processChar = (char: string) => {
       const upperChar = char.toUpperCase();
-      if ((upperChar >= "A" && upperChar <= "Z") || (upperChar >= "0" && upperChar <= "9")) {
+      if (
+        (upperChar >= "A" && upperChar <= "Z") ||
+        (upperChar >= "0" && upperChar <= "9")
+      ) {
         return `/images/alphabets/${upperChar}.png`;
       } else if (char === " ") {
         return "/images/alphabets/SPACE.png";
@@ -57,24 +145,16 @@ const TextToSign: React.FC<TextToSignProps> = ({
       }
     };
 
-    for (const char of input) {
-      const processedChar = processChar(char);
-      if (processedChar === currentChar) {
-        count++;
+    for (const word of words) {
+      if (specialWords[word]) {
+        result.push({ src: specialWords[word], count: 1 });
       } else {
-        if (currentChar) {
-          for (let i = 0; i < count; i++) {
-            result.push({ src: currentChar, count: i + 1 });
-          }
+        for (const char of word) {
+          result.push({ src: processChar(char), count: 1 });
         }
-        currentChar = processedChar;
-        count = 1;
       }
-    }
-
-    if (currentChar) {
-      for (let i = 0; i < count; i++) {
-        result.push({ src: currentChar, count: i + 1 });
+      if (word !== words[words.length - 1]) {
+        result.push({ src: "/images/alphabets/SPACE.png", count: 1 });
       }
     }
 
@@ -102,7 +182,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
 
   const handleSpeak = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    if ('webkitSpeechRecognition' in window) {
+    if ("webkitSpeechRecognition" in window) {
       const recognition = new (window as any).webkitSpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -115,12 +195,12 @@ const TextToSign: React.FC<TextToSignProps> = ({
         const transcript = event.results[0][0].transcript;
         setText((prevText) => {
           const newText = prevText + transcript;
-          return newText.charAt(0) === ' ' ? newText.slice(1) : newText;
+          return newText.charAt(0) === " " ? newText.slice(1) : newText;
         });
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
+        console.error("Speech recognition error", event.error);
         setIsListening(false);
       };
 
@@ -130,7 +210,7 @@ const TextToSign: React.FC<TextToSignProps> = ({
 
       recognition.start();
     } else {
-      alert('Speech recognition is not supported in your browser.');
+      alert("Speech recognition is not supported in your browser.");
     }
   }, []);
 
@@ -183,7 +263,9 @@ const TextToSign: React.FC<TextToSignProps> = ({
               variant="outline"
               size="sm"
               className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
+                isDarkMode
+                  ? "border-gray-600 hover:bg-gray-700"
+                  : "border-gray-300 hover:bg-gray-100"
               }`}
             >
               Clear
@@ -193,27 +275,38 @@ const TextToSign: React.FC<TextToSignProps> = ({
               variant="outline"
               size="sm"
               className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-                isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'
-              } ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                isDarkMode
+                  ? "border-gray-600 hover:bg-gray-700"
+                  : "border-gray-300 hover:bg-gray-100"
+              } ${isListening ? "bg-red-500 hover:bg-red-600" : ""}`}
             >
-              <Mic className={`w-4 h-4 ${isListening ? 'animate-pulse' : ''}`} />
+              <Mic
+                className={`w-4 h-4 ${isListening ? "animate-pulse" : ""}`}
+              />
             </Button>
             <Button
               type="submit"
               size="sm"
               className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${
                 isTranslating
-                  ? 'bg-red-500 hover:bg-red-600'
+                  ? "bg-red-500 hover:bg-red-600"
                   : isDarkMode
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-green-500 hover:bg-green-600'
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-green-500 hover:bg-green-600"
               } text-white`}
             >
               {isTranslating ? "STOP" : "Translate"}
             </Button>
           </div>
-          <div className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-            Current: {translatedImages[currentImageIndex]?.src.split('/').pop()?.split('.')[0] || ""} (
+          <div
+            className={`text-sm ${isDarkMode ? "text-white" : "text-gray-900"}`}
+          >
+            Current:{" "}
+            {translatedImages[currentImageIndex]?.src
+              .split("/")
+              .pop()
+              ?.split(".")[0] || ""}{" "}
+            (
             {translatedImages.length > 0
               ? `${currentImageIndex + 1}/${translatedImages.length}`
               : "0/0"}
@@ -244,7 +337,12 @@ const TextToSign: React.FC<TextToSignProps> = ({
           <div className="w-full h-full flex items-center justify-center relative">
             <img
               src={translatedImages[currentImageIndex].src}
-              alt={`Sign for ${translatedImages[currentImageIndex].src.split('/').pop()?.split('.')[0]}`}
+              alt={`Sign for ${
+                translatedImages[currentImageIndex].src
+                  .split("/")
+                  .pop()
+                  ?.split(".")[0]
+              }`}
               className="w-full h-full object-contain"
             />
             {translatedImages[currentImageIndex].count > 1 && (
