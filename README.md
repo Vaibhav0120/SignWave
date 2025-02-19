@@ -65,37 +65,7 @@ npm install
 cd ../backend
 ```
 
-2. Create a Python virtual environment:
-
-```bash
-python -m venv venv
-```
-
-3. Activate the virtual environment:
-- On Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-- On macOS and Linux:
-
-```bash
-source venv/bin/activate
-```
-
-4. Install the required Python packages:
-
-First Time Installing dependency (for DEVs)-
-```bash
-pip install flask flask-cors opencv-python numpy tensorflow cvzone mediapipe
-```
-
-```bash
-pip freeze > requirements.txt
-```
-
-For Everyone Install Project First Time-
+2. Install required packages:
 
 ```bash
 pip install -r requirements.txt
@@ -107,7 +77,7 @@ To run the SignWave application, you need to start both the frontend and backend
 
 ### Starting the Backend Server
 
-1. Ensure you're in the backend directory and the virtual environment is activated.
+1. Ensure you're in the backend directory.
 2. Run the Flask application:
 
 ```bash
@@ -127,6 +97,11 @@ npm start
 ```
 
 The frontend should open automatically in your default web browser at `http://localhost:3000`.
+
+## Screenshot
+
+<img src="https://media.licdn.com/dms/image/v2/D5622AQEYZSllHvqQkg/feedshare-shrink_2048_1536/B56ZQn47u2HIA0-/0/1735836024994?e=1743033600&v=beta&t=tX7zzqtlYOSI83x6hEfAe-N8Satwu6rLb2lhAr_1vuA">
+
 
 ## File Structure
 
