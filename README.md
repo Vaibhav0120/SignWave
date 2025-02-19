@@ -3,17 +3,6 @@
 SignWave is a web application that bridges communication gaps with sign language translation technology. It offers two main features: Sign to Text and Text to Sign.
 
 [Watch It Live](https://sign-wave-gamma.vercel.app/)
-## Table of Contents
-
-1. [Project Overview](#project-overview)
-2. [File Structure](#file-structure)
-3. [Installation](#installation)
-4. [Running the Application](#running-the-application)
-5. [How It Works](#how-it-works)
-6. [Component Breakdown](#component-breakdown)
-7. [API Endpoints](#api-endpoints)
-8. [Troubleshooting](#troubleshooting)
-9. [Future Improvements](#future-improvements)
 
 ## Project Overview
 
@@ -52,7 +41,6 @@ git clone [https://github.com/Vaibhav0120/SignWave.git](https://github.com/Vaibh
 cd SignWave
 ```
 
-
 ### Frontend Setup
 
 1. Navigate to the project's frontend directory:
@@ -65,27 +53,6 @@ cd frontend
 
 ```bash
 npm install
-```
-```bash
-
-npm install @radix-ui/react-slot class-variance-authority tailwindcss-animate
-```
-
-```bash
-npm install clsx tailwind-merge
-```
-
-```bash
-npm install framer-motion lucide-react
-```
-
-
-```bash
-npm install lodash @types/lodash
-```
-
-```bash
-npm install --save-dev @testing-library/react @testing-library/jest-dom
 ```
 
 ### Backend Setup
