@@ -28,62 +28,6 @@ SignWave consists of two main parts:
 - **Text to Sign**: Convert text into sign language animations.
 - **Text-to-Speech**: Listen to the translated text.
 
-## File Structure
-
-```bash
-SignWave/
-├── frontend/
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── favicon.ico
-│   │   ├── manifest.json
-│   │   ├── robots.txt
-│   │   └── images/
-│   │       ├── Sign_Language.png
-│   │       └── alphabets/
-│   │           ├── A.png
-│   │           ├── B.png
-│   │           ├── ... (other alphabet images)
-│   │           ├── 0.png
-│   │           ├── 1.png
-│   │           ├── 2.png
-│   │           └── ... (other 0- 10images)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Camera.tsx
-│   │   │   ├── CameraOffSign.tsx
-│   │   │   ├── CursorGradient.tsx
-│   │   │   ├── Navbar.tsx
-│   │   │   ├── ReverseButton.tsx
-│   │   │   ├── SignAnimation.tsx
-│   │   │   ├── Switch.tsx
-│   │   │   ├── TextToSpeech.tsx
-│   │   │   ├── TranslationLayout.tsx
-│   │   │   └── ui/
-│   │   │       ├── button.tsx
-│   │   │       └── spinner.tsx
-│   │   ├── images/
-│   │   │   └── Light_Theme.jpg
-│   │   ├── pages/
-│   │   │   ├── Home.tsx
-│   │   │   ├── SignToText.tsx
-│   │   │   └── TextToSign.tsx
-│   │   ├── utils/
-│   │   │   └── api.ts
-│   │   ├── App.tsx
-│   │   ├── index.tsx
-│   │   └── index.css
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── tailwind.config.js
-├── backend/
-│   ├── app.py
-│   └── cnn8grps_rad1_model.h5
-├── .gitignore
-└── README.md
-
-```
-
 ## Installation
 
 Follow these steps to set up the SignWave project on your local machine:
@@ -215,88 +159,61 @@ npm start
 
 The frontend should open automatically in your default web browser at `http://localhost:3000`.
 
-## How It Works
+## File Structure
 
-### Frontend
+```bash
+SignWave/
+├── frontend/
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── favicon.ico
+│   │   ├── manifest.json
+│   │   ├── robots.txt
+│   │   └── images/
+│   │       ├── Sign_Language.png
+│   │       └── alphabets/
+│   │           ├── A.png
+│   │           ├── B.png
+│   │           ├── ... (other alphabet images)
+│   │           ├── 0.png
+│   │           ├── 1.png
+│   │           ├── 2.png
+│   │           └── ... (other 0- 10images)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Camera.tsx
+│   │   │   ├── CameraOffSign.tsx
+│   │   │   ├── CursorGradient.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── ReverseButton.tsx
+│   │   │   ├── SignAnimation.tsx
+│   │   │   ├── Switch.tsx
+│   │   │   ├── TextToSpeech.tsx
+│   │   │   ├── TranslationLayout.tsx
+│   │   │   └── ui/
+│   │   │       ├── button.tsx
+│   │   │       └── spinner.tsx
+│   │   ├── images/
+│   │   │   └── Light_Theme.jpg
+│   │   ├── pages/
+│   │   │   ├── Home.tsx
+│   │   │   ├── SignToText.tsx
+│   │   │   └── TextToSign.tsx
+│   │   ├── utils/
+│   │   │   └── api.ts
+│   │   ├── App.tsx
+│   │   ├── index.tsx
+│   │   └── index.css
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── tailwind.config.js
+├── backend/
+│   ├── app.py
+│   └── cnn8grps_rad1_model.h5
+├── .gitignore
+└── README.md
 
-- `App.tsx`: The main component that sets up routing and includes the Navbar.
-- `index.tsx`: The entry point of the application that renders the App component.
-- `index.css`: Contains global styles and Tailwind CSS imports.
-- `components/`: Contains reusable components like Navbar, Camera, TextToSpeech, and SignAnimation.
-- `pages/`: Contains the main pages of the application (Home, SignToText, and TextToSign).
-- `utils/api.ts`: Handles API calls to the backend.
-
-### Backend
-
-- `app.py`: The Flask application that handles sign language recognition and text-to-sign conversion.
-- `cnn8grps_rad1_model.h5`: A pre-trained machine learning model for sign language recognition.
-
-### User Flow
-
-1. **Home Page**: Users can choose between Sign to Text and Text to Sign features.
-2. **Sign to Text**:
-- The Camera component captures video from the user's device.
-- When the user clicks "Capture", the image is sent to the backend for processing.
-- The backend uses the pre-trained model to recognize the sign and returns the predicted text.
-- The result is displayed, and users can use the TextToSpeech component to hear the prediction.
-3. **Text to Sign**:
-- Users enter text in the input field.
-- When submitted, the text is sent to the backend for processing.
-- The backend generates a sign language animation (currently a placeholder).
-- The SignAnimation component displays the resulting animation.
-
-## Component Breakdown
-
-### Navbar.tsx
-- Provides navigation links to Home, Sign to Text, and Text to Sign pages.
-- Uses React Router for navigation.
-
-### Camera.tsx
-- Accesses the user's camera using the `navigator.mediaDevices.getUserMedia` API.
-- Provides a "Capture" button to take a snapshot of the current camera feed.
-- Sends the captured image data to the parent component for processing.
-
-### TextToSpeech.tsx
-- Utilizes the Web Speech API to convert text to speech.
-- Provides a "Speak" button to trigger the text-to-speech functionality.
-
-### SignAnimation.tsx
-- Displays a video element with the sign language animation.
-- Takes an `animationUrl` prop to set the video source.
-
-### Home.tsx
-- Serves as the landing page for the application.
-- Provides links to the Sign to Text and Text to Sign features.
-
-### SignToText.tsx
-- Integrates the Camera and TextToSpeech components.
-- Handles the logic for sending captured images to the backend and displaying results.
-
-### TextToSign.tsx
-- Provides a form for users to input text.
-- Handles the logic for sending text to the backend and displaying the resulting animation.
-
-## API Endpoints
-
-### POST /api/predict
-- Accepts an image of a sign language gesture.
-- Returns the predicted text representation of the sign.
-
-### POST /api/text-to-sign
-- Accepts a text string.
-- Returns a URL to an animation representing the text in sign language.
-
-## Troubleshooting
-
-- If you encounter any issues with dependencies, try deleting the `node_modules` folder in the frontend directory and the `venv` folder in the backend directory, then repeat the installation steps.
-- Ensure that your device has a working camera for the Sign to Text feature.
-- If the backend server fails to start, make sure you have the correct Python version and all required packages installed.
-- For any other issues, check the browser console (frontend) or terminal (backend) for error messages.
-
-Common issues and solutions:
-1. **Camera not working**: Ensure you've granted the necessary permissions in your browser settings.
-2. **Backend connection error**: Check if the backend server is running and the API_URL in `api.ts` is correct.
-3. **Missing dependencies**: Run `npm install` in the frontend directory and `pip install -r requirements.txt` in the backend directory.
+```
 
 ## Future Improvements
 
