@@ -1,8 +1,8 @@
-# SignWave: Sign Language Translator
+<h1 align="center">SignWave: Sign Language Translator</h1>
 
-SignWave is a web application that bridges communication gaps with sign language translation technology. It offers two main features: Sign to Text and Text to Sign.
+<p align="center">SignWave is a web application that bridges communication gaps with sign language translation technology. It offers two main features: Sign to Text and Text to Sign.</p>
 
-NOTE: This project is not complete. There are some bugs I am working on, so SignToText cannot be used in "Watch It Live."
+<p align="center"><b>NOTE: This project is not complete. There are some bugs I am working on, so SignToText cannot be used in "Watch It Live."</b></p>
 
 [Watch It Live](https://sign-wave-gamma.vercel.app/)
 
