@@ -6,20 +6,20 @@ NOTE: This project is not complete. There are some bugs i am working on to fix t
 
 [Watch It Live](https://sign-wave-gamma.vercel.app/)
 
-## Project Overview
+<h2 align="center">Project Overview</h2>
 
 SignWave consists of two main parts:
 
 1. **Frontend**: A React application that provides the user interface.
 2. **Backend**: A Python Flask application that handles sign language recognition and text-to-sign conversion.
 
-### Key Features
+<h2 align="center">Key Features</h2>
 
 - **Sign to Text**: Translate sign language gestures into text using your device's camera.
 - **Text to Sign**: Convert text into sign language animations.
 - **Text-to-Speech**: Listen to the translated text.
 
-## Installation
+<h2 align="center">Installation</h2>
 
 Follow these steps to set up the SignWave project on your local machine:
 
@@ -71,7 +71,7 @@ cd ../backend
 pip install -r requirements.txt
 ```
 
-## Running the Application
+<h2 align="center">Running the Application</h2>
 
 To run the SignWave application, you need to start both the frontend and backend servers.
 
@@ -98,7 +98,7 @@ npm start
 
 The frontend should open automatically in your default web browser at `http://localhost:3000`.
 
-## Screenshot
+<h2 align="center">Screenshots</h2>
 
 <img src="https://media.licdn.com/dms/image/v2/D5622AQEYZSllHvqQkg/feedshare-shrink_2048_1536/B56ZQn47u2HIA0-/0/1735836024994?e=1743033600&v=beta&t=tX7zzqtlYOSI83x6hEfAe-N8Satwu6rLb2lhAr_1vuA">
 
@@ -107,7 +107,7 @@ The frontend should open automatically in your default web browser at `http://lo
 <img src="https://media.licdn.com/dms/image/v2/D5622AQGDx4lfXPrFyg/feedshare-shrink_2048_1536/B56ZQn47vCH0As-/0/1735836025669?e=1743033600&v=beta&t=iJo4QIx5k24Y4usKv5iMa9RToOatkmDDp05asiyh954">
 
 
-## File Structure
+<h2 align="center">File Structure</h2>
 
 ```bash
 SignWave/
@@ -163,7 +163,7 @@ SignWave/
 
 ```
 
-## Future Improvements
+<h2 align="center">Future Improvements</h2>
 
 1. Implement real-time sign language recognition for continuous translation.
 2. Expand the sign language vocabulary recognized by the model.
