@@ -4,7 +4,7 @@
 
 <p align="center"><b>NOTE: This project is not complete. There are some bugs I am working on, so SignToText cannot be used in "Watch It Live."</b></p>
 
-[Watch It Live](https://sign-wave-gamma.vercel.app/)
+See how the project looks: [Click here!](https://sign-wave-gamma.vercel.app/)
 
 <h2 align="center">Project Overview</h2>
 
