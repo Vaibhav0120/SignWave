@@ -2,9 +2,9 @@
 
 <p align="center">SignWave is a web application that bridges communication gaps with sign language translation technology. It offers two main features: Sign to Text and Text to Sign.</p>
 
-<p align="center"><b>NOTE: This project is not complete. There are some bugs I am working on, so SignToText cannot be used in "Watch It Live."</b></p>
-
 To Watch It Live: [Click here!](https://sign-wave-gamma.vercel.app/)
+
+<p align="center"><b>NOTE: This project is not complete. There are some bugs I am working on, so SignToText Feature cannot be used in "Watch It Live."</b></p>
 
 <h2 align="center">Project Overview</h2>
 
