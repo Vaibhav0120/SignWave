@@ -100,11 +100,11 @@ The frontend should open automatically in your default web browser at `http://lo
 
 <h2 align="center">Screenshots</h2>
 
-<img src="https://media.licdn.com/dms/image/v2/D5622AQEYZSllHvqQkg/feedshare-shrink_2048_1536/B56ZQn47u2HIA0-/0/1735836024994?e=1743033600&v=beta&t=tX7zzqtlYOSI83x6hEfAe-N8Satwu6rLb2lhAr_1vuA">
+<img src="https://media.licdn.com/dms/image/v2/D5622AQEYZSllHvqQkg/feedshare-shrink_2048_1536/B56ZQn47u2HIA0-/0/1735836024994?e=1747267200&v=beta&t=49XtBPf5Jr7_KAbpg0l6oB9pFWd1pPSdXuTAYIqWwPA">
 
-<img src="https://media.licdn.com/dms/image/v2/D5622AQEGDXJFcCFI-Q/feedshare-shrink_2048_1536/B56ZQn47uLH0As-/0/1735836025329?e=1743033600&v=beta&t=vBRLF67wkPPq3LostWkRoe_iheMWHMYiKIulcEAHZb4">
+<img src="https://media.licdn.com/dms/image/v2/D5622AQEGDXJFcCFI-Q/feedshare-shrink_2048_1536/B56ZQn47uLH0As-/0/1735836025329?e=1747267200&v=beta&t=gjIiFBil54owpNJ6ZqJtK0X1aVkkjI2hM4hXX2UjNe4">
 
-<img src="https://media.licdn.com/dms/image/v2/D5622AQGDx4lfXPrFyg/feedshare-shrink_2048_1536/B56ZQn47vCH0As-/0/1735836025669?e=1743033600&v=beta&t=iJo4QIx5k24Y4usKv5iMa9RToOatkmDDp05asiyh954">
+<img src="https://media.licdn.com/dms/image/v2/D5622AQGDx4lfXPrFyg/feedshare-shrink_2048_1536/B56ZQn47vCH0As-/0/1735836025669?e=1747267200&v=beta&t=r833RFcQIm1yxt_NfdyQieeD6AETAJC__sTTppZdfU4">
 
 
 <h2 align="center">File Structure</h2>
